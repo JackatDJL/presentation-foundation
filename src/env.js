@@ -2,7 +2,8 @@ import { createEnv } from "@t3-oss/env-nextjs";
 import { config } from "dotenv";
 import { z } from "zod";
 
-config({path: ".env.local"});
+// IMPORTANT: To Load the env use (vercel env pull .env) / our db needs the .env not .env.local
+config({ path: ".env" });
 
 export const env = createEnv({
   server: {
@@ -22,7 +23,9 @@ export const env = createEnv({
     POSTGRES_URL_NO_SSL: z.string().url(),
     POSTGRES_USER: z.string(),
     UPLOADTHING_TOKEN: z.string(),
-    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    NODE_ENV: z
+      .enum(["development", "test", "production"])
+      .default("development"),
   },
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),

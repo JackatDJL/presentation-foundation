@@ -5,9 +5,12 @@ import { type Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
+import { TRPCReactProvider } from "~/trpc/react";
+
 export const metadata: Metadata = {
   title: "Presentation - Foundation - by DJL",
-  description: "A Platform to host your Presentations on without the hasstle of logging in and hosting your files on a Cloud Service.",
+  description:
+    "A Platform to host your Presentations on without the hasstle of logging in and hosting your files on a Cloud Service.",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
@@ -19,7 +22,7 @@ export default function RootLayout({
       <body>
         <Analytics />
         <SpeedInsights />
-        {children}
+        <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>
     </html>
   );
