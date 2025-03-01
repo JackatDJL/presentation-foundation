@@ -1,7 +1,12 @@
 import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
-import { type Metadata } from "next";
+import type React from "react"
+import type { Metadata } from "next"
+import Header from "~/components/header"
+import Footer from "~/components/footer"
+import { ThemeProvider } from "~/components/theme-provider"
+
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -22,7 +27,13 @@ export default function RootLayout({
       <body>
         <Analytics />
         <SpeedInsights />
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider><ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <div className="min-h-screen flex flex-col bg-background text-foreground">
+            <Header />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+          </div>
+        </ThemeProvider></TRPCReactProvider>
       </body>
     </html>
   );
