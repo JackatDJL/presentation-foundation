@@ -1,6 +1,7 @@
-import Link from "next/link"
-import Image from "next/image"
-import { ThemeToggle } from "./theme-toggle"
+import Link from "next/link";
+import Image from "next/image";
+import { ThemeToggle } from "./theme-toggle";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 export default function Header() {
   return (
@@ -16,7 +17,9 @@ export default function Header() {
                 className="object-contain"
               />
             </div>
-            <span className="text-xl font-semibold">Presentation Foundation</span>
+            <span className="text-xl font-semibold">
+              Presentation Foundation
+            </span>
           </Link>
         </div>
 
@@ -30,26 +33,16 @@ export default function Header() {
           </Link>
 
           {/* Placeholder for Clerk authentication */}
-          <div className="relative w-8 h-8 bg-muted rounded-full">
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
+          <div className="relative h-8">
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+            <SignedOut>
+              <SignInButton />
+            </SignedOut>
           </div>
         </div>
       </div>
     </header>
-  )
+  );
 }
-
