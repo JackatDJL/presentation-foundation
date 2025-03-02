@@ -6,12 +6,17 @@ import type { Metadata } from "next";
 import Header from "~/components/header";
 import Footer from "~/components/footer";
 import { ThemeProvider } from "~/components/theme-provider";
-import { ClerkProvider } from "@clerk/nextjs";
+
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { TRPCReactProvider } from "~/trpc/react";
+
+import { ClerkProvider } from "@clerk/nextjs";
+import { extractRouterConfig } from "uploadthing/server";
+import { UploadthingRouter } from "./api/uploadthing/core";
 
 export const metadata: Metadata = {
   title: "Presentation - Foundation - by DJL",
@@ -30,6 +35,9 @@ export default function RootLayout({
           <Analytics />
           <SpeedInsights />
           <TRPCReactProvider>
+            <NextSSRPlugin
+              routerConfig={extractRouterConfig(UploadthingRouter)}
+            />
             <ThemeProvider
               attribute="class"
               defaultTheme="system"

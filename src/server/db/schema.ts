@@ -7,10 +7,10 @@ import {
   pgTableCreator,
   timestamp,
   varchar,
-  serial,
   text,
   boolean,
   integer,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -23,23 +23,49 @@ export const createTable = pgTableCreator(
   (name) => `presentation-foundation_${name}`,
 );
 
-// Define tables without circular references first
+export const file_types = pgEnum("file_types", [
+  "logo",
+  "cover",
+  "presentation",
+  "handout",
+  "research",
+]);
+
+export const visibility_types = pgEnum("visibility_types", [
+  "public",
+  "private",
+]);
+
 export const files = createTable(
   "files",
   {
-    id: serial("id").primaryKey(),
+    id: integer("id").primaryKey().unique(),
     name: text("name").notNull(),
-    type: text("type").notNull(),
-    url: text("url").notNull(),
+    type: file_types("type").notNull(),
+    datatype: text("type").notNull(),
+    size: integer().notNull(),
+    key: varchar("key", { length: 48 }).notNull(),
+    ufsUrl: text("ufs_url").notNull(),
     isLocked: boolean("is_locked").default(false),
     password: text("password"),
-    // We'll add the foreign key later
-    presentationId: integer("presentation_id"),
+
+    presentationId: integer("presentation_id").notNull(),
+    owner: varchar("owner", { length: 32 }).notNull(),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => {
     return {
-      presentationIdIdx: index("presentation_id_idx").on(table.presentationId),
-      typeIdx: index("type_idx").on(table.type),
+      fileIdIdx: index("file_id_idx").on(table.id),
+      filePresentationIdIdx: index("file_presentation_id_idx").on(
+        table.presentationId,
+      ),
+      fileOwnerIdx: index("file_owner_idx").on(table.owner),
+      fileTypePresentationIdIdx: index("file_type_presentation_id_idx").on(
+        table.type,
+        table.presentationId,
+      ),
     };
   },
 );
@@ -47,37 +73,43 @@ export const files = createTable(
 export const presentations = createTable(
   "presentations",
   {
-    id: serial("id").primaryKey(),
-    shortname: varchar("shortname", { length: 50 }).notNull().unique(),
+    id: integer("id").primaryKey().unique(),
+    shortname: varchar("shortname", { length: 25 }).notNull().unique(),
     title: text("title").notNull(),
     description: text("description"),
-    // Use integer instead of serial for foreign keys
-    logo: serial("logo"),
-    cover: serial("cover"),
-    presentation: serial("presentation"),
-    handout: serial("handout"),
-    research: serial("research"),
+
+    logo: integer("logo").references(() => files.id),
+    cover: integer("cover").references(() => files.id),
+    presentation: integer("presentation").references(() => files.id),
+    handout: integer("handout").references(() => files.id),
+    research: integer("research").references(() => files.id),
+
     kahootPin: text("kahoot_pin"),
     kahootSelfHostUrl: text("kahoot_self_host_url"),
-    visibility: text("visibility", { enum: ["public", "private"] })
-      .notNull()
-      .default("private"),
-    owner: text("owner").notNull(),
+
     credits: text("credits"),
+
+    visibility: visibility_types("visibility").default("private").notNull(),
+
+    owner: varchar("owner", { length: 32 }).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => {
     return {
-      shortnameIdx: index("shortname_idx").on(table.shortname),
-      ownerIdx: index("owner_idx").on(table.owner),
-      visibilityIdx: index("visibility_idx").on(table.visibility),
+      prIdIdx: index("pr_id_idx").on(table.id),
+      prShortnameIdx: index("pr_shortname_idx").on(table.shortname),
+      prOwnerIdx: index("pr_owner_idx").on(table.owner),
+      prOwnerVisibilityIdx: index("pr_owner_visibility_idx").on(
+        table.owner,
+        table.visibility,
+      ),
+      prVisibilityIdx: index("pr_visibility_idx").on(table.visibility),
     };
   },
 );
 
 // Add foreign key constraints
-// This is a type-safe way to add foreign key references after table definitions
 export const presentationRelations = relations(
   presentations,
   ({ many, one }) => ({

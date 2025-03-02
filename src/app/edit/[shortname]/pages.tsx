@@ -1,19 +1,40 @@
-"use client"
+/* eslint-disable @next/next/no-async-client-component */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { getPresentation, updatePresentation, deletePresentation, isOwner, currentUser } from "~/lib/data"
-import { Button } from "~/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/components/ui/dialog"
-import FilePreview from "~/components/file-preview"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  getPresentation,
+  updatePresentation,
+  deletePresentation,
+  isOwner,
+  currentUser,
+} from "~/lib/data";
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "~/components/ui/dialog";
+import FilePreview from "~/components/file-preview";
 
-export default function EditPage({ params }: { params: { shortname: string } }) {
-  const router = useRouter()
-  const { shortname } = params
-  const user = currentUser
+interface EditPageProps {
+  params: Promise<{
+    shortname: string;
+  }>;
+}
+
+export default function EditPage({ params }: EditPageProps) {
+  const router = useRouter();
+  const user = currentUser;
 
   const [formData, setFormData] = useState({
     title: "",
@@ -29,77 +50,86 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
     kahootSelfHostUrl: "",
     visibility: "public",
     credits: "",
-  })
+  });
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isLoading, setIsLoading] = useState(true)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    const presentation = getPresentation(shortname)
+    const fetchPresentation = async () => {
+      const presentation = getPresentation((await params).shortname);
 
-    if (!presentation) {
-      router.push("/manage")
-      return
-    }
+      if (!presentation) {
+        router.push("/manage");
+        return;
+      }
 
-    // Check if user is the owner
-    if (!isOwner(shortname, user.id)) {
-      router.push("/manage")
-      return
-    }
+      // Check if user is the owner
+      if (!isOwner((await params).shortname, user.id)) {
+        router.push("/manage");
+        return;
+      }
 
-    setFormData({
-      title: presentation.title,
-      description: presentation.description || "",
-      logo: presentation.logo || "",
-      cover: presentation.cover || "",
-      presentationUrl: presentation.presentationFile?.url || "",
-      presentationIsLocked: presentation.presentationFile?.isLocked || false,
-      presentationPassword: presentation.presentationFile?.password || "",
-      handoutUrl: presentation.handoutFile?.url || "",
-      researchUrl: presentation.researchFile?.url || "",
-      kahootPin: presentation.kahootPin || "",
-      kahootSelfHostUrl: presentation.kahootSelfHostUrl || "",
-      visibility: presentation.visibility,
-      credits: presentation.credits || "",
-    })
+      setFormData({
+        title: presentation.title,
+        description: presentation.description ?? "",
+        logo: presentation.logo ?? "",
+        cover: presentation.cover ?? "",
+        presentationUrl: presentation.presentationFile?.url ?? "",
+        presentationIsLocked: presentation.presentationFile?.isLocked ?? false,
+        presentationPassword: presentation.presentationFile?.password ?? "",
+        handoutUrl: presentation.handoutFile?.url ?? "",
+        researchUrl: presentation.researchFile?.url ?? "",
+        kahootPin: presentation.kahootPin ?? "",
+        kahootSelfHostUrl: presentation.kahootSelfHostUrl ?? "",
+        visibility: presentation.visibility,
+        credits: presentation.credits ?? "",
+      });
 
-    setIsLoading(false)
-  }, [shortname, router, user.id])
+      setIsLoading(false);
+    };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    fetchPresentation();
+  }, [shortname, router, user.id]);
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
     // Clear error for this field
     if (errors[name]) {
       setErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
     }
-  }
+  };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target
-    setFormData((prev) => ({ ...prev, [name]: checked }))
-  }
+    const { name, checked } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: checked }));
+  };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "Title is required"
+      newErrors.title = "Title is required";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (validateForm()) {
       // Update the presentation
@@ -112,7 +142,9 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
           ? {
               url: formData.presentationUrl,
               isLocked: formData.presentationIsLocked,
-              password: formData.presentationIsLocked ? formData.presentationPassword : undefined,
+              password: formData.presentationIsLocked
+                ? formData.presentationPassword
+                : undefined,
             }
           : undefined,
         handoutFile: formData.handoutUrl
@@ -129,81 +161,83 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
         kahootSelfHostUrl: formData.kahootSelfHostUrl || undefined,
         visibility: formData.visibility as "public" | "private",
         credits: formData.credits || undefined,
-      })
+      });
 
       // Redirect to the presentations page
-      router.push("/manage")
+      router.push("/manage");
     }
-  }
+  };
 
   const handleDelete = () => {
-    deletePresentation(shortname)
-    router.push("/manage")
-  }
+    deletePresentation(shortname);
+    router.push("/manage");
+  };
 
-  const handleFileUpload = (type: "presentation" | "handout" | "research") => async (file: File) => {
-    // In a real app, you would upload the file to your storage service here
-    // For now, we'll just simulate it with a fake URL
-    const fakeUrl = `https://storage.example.com/${type}/${file.name}`
+  const handleFileUpload =
+    (type: "presentation" | "handout" | "research") => async (file: File) => {
+      // In a real app, you would upload the file to your storage service here
+      // For now, we'll just simulate it with a fake URL
+      const fakeUrl = `https://storage.example.com/${type}/${file.name}`;
 
-    const updates: any = {}
-    switch (type) {
-      case "presentation":
-        updates.presentationFile = {
-          url: fakeUrl,
-          isLocked: formData.presentationIsLocked,
-          password: formData.presentationPassword,
-        }
-        break
-      case "handout":
-        updates.handoutFile = { url: fakeUrl }
-        break
-      case "research":
-        updates.researchFile = { url: fakeUrl }
-        break
-    }
+      const updates: any = {};
+      switch (type) {
+        case "presentation":
+          updates.presentationFile = {
+            url: fakeUrl,
+            isLocked: formData.presentationIsLocked,
+            password: formData.presentationPassword,
+          };
+          break;
+        case "handout":
+          updates.handoutFile = { url: fakeUrl };
+          break;
+        case "research":
+          updates.researchFile = { url: fakeUrl };
+          break;
+      }
 
-    updatePresentation(shortname, updates)
-    setFormData((prev) => ({
-      ...prev,
-      [`${type}Url`]: fakeUrl,
-    }))
-  }
+      updatePresentation(shortname, updates);
+      setFormData((prev) => ({
+        ...prev,
+        [`${type}Url`]: fakeUrl,
+      }));
+    };
 
-  const handleFileDelete = (type: "presentation" | "handout" | "research") => () => {
-    const updates: any = {}
-    switch (type) {
-      case "presentation":
-        updates.presentationFile = null
-        break
-      case "handout":
-        updates.handoutFile = null
-        break
-      case "research":
-        updates.researchFile = null
-        break
-    }
+  const handleFileDelete =
+    (type: "presentation" | "handout" | "research") => () => {
+      const updates: any = {};
+      switch (type) {
+        case "presentation":
+          updates.presentationFile = null;
+          break;
+        case "handout":
+          updates.handoutFile = null;
+          break;
+        case "research":
+          updates.researchFile = null;
+          break;
+      }
 
-    updatePresentation(shortname, updates)
-    setFormData((prev) => ({
-      ...prev,
-      [`${type}Url`]: "",
-    }))
-  }
+      updatePresentation(shortname, updates);
+      setFormData((prev) => ({
+        ...prev,
+        [`${type}Url`]: "",
+      }));
+    };
 
   const handleToggleLock = () => {
     setFormData((prev) => ({
       ...prev,
       presentationIsLocked: !prev.presentationIsLocked,
-    }))
-  }
+    }));
+  };
 
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -228,7 +262,10 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
               <h2 className="text-xl font-semibold">Basic Information</h2>
 
               <div>
-                <label htmlFor="title" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium mb-1"
+                >
                   Title *
                 </label>
                 <input
@@ -241,11 +278,18 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
                     errors.title ? "border-destructive" : "border-input"
                   }`}
                 />
-                {errors.title && <p className="text-destructive text-sm mt-1">{errors.title}</p>}
+                {errors.title && (
+                  <p className="text-destructive text-sm mt-1">
+                    {errors.title}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label htmlFor="shortname" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="shortname"
+                  className="block text-sm font-medium mb-1"
+                >
                   Shortname
                 </label>
                 <input
@@ -255,11 +299,16 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
                   disabled
                   className="w-full px-4 py-2 bg-muted border border-input rounded-md"
                 />
-                <p className="text-muted-foreground text-sm mt-1">Shortname cannot be changed</p>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Shortname cannot be changed
+                </p>
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium mb-1"
+                >
                   Description
                 </label>
                 <textarea
@@ -273,7 +322,10 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
               </div>
 
               <div>
-                <label htmlFor="visibility" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="visibility"
+                  className="block text-sm font-medium mb-1"
+                >
                   Visibility
                 </label>
                 <select
@@ -289,7 +341,10 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
               </div>
 
               <div>
-                <label htmlFor="credits" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="credits"
+                  className="block text-sm font-medium mb-1"
+                >
                   Credits
                 </label>
                 <input
@@ -313,8 +368,8 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
                 fileUrl={formData.logo}
                 onUpload={(file) => {
                   // In a real app, you would upload the file and get a URL
-                  const fakeUrl = `https://storage.example.com/logos/${file.name}`
-                  setFormData((prev) => ({ ...prev, logo: fakeUrl }))
+                  const fakeUrl = `https://storage.example.com/logos/${file.name}`;
+                  setFormData((prev) => ({ ...prev, logo: fakeUrl }));
                 }}
                 onDelete={() => setFormData((prev) => ({ ...prev, logo: "" }))}
               />
@@ -324,8 +379,8 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
                 fileUrl={formData.cover}
                 onUpload={(file) => {
                   // In a real app, you would upload the file and get a URL
-                  const fakeUrl = `https://storage.example.com/covers/${file.name}`
-                  setFormData((prev) => ({ ...prev, cover: fakeUrl }))
+                  const fakeUrl = `https://storage.example.com/covers/${file.name}`;
+                  setFormData((prev) => ({ ...prev, cover: fakeUrl }));
                 }}
                 onDelete={() => setFormData((prev) => ({ ...prev, cover: "" }))}
               />
@@ -363,7 +418,10 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
 
             {formData.presentationIsLocked && (
               <div className="mt-4">
-                <label htmlFor="presentationPassword" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="presentationPassword"
+                  className="block text-sm font-medium mb-1"
+                >
                   Presentation Password
                 </label>
                 <input
@@ -384,7 +442,10 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="kahootPin" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="kahootPin"
+                  className="block text-sm font-medium mb-1"
+                >
                   Kahoot PIN
                 </label>
                 <input
@@ -396,11 +457,16 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
                   className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="123456 or 'none' for loading"
                 />
-                <p className="text-muted-foreground text-sm mt-1">Enter 'none' to show a loading animation</p>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Enter 'none' to show a loading animation
+                </p>
               </div>
 
               <div>
-                <label htmlFor="kahootSelfHostUrl" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="kahootSelfHostUrl"
+                  className="block text-sm font-medium mb-1"
+                >
                   Kahoot Self-Host URL
                 </label>
                 <input
@@ -417,7 +483,11 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
           </div>
 
           <div className="flex justify-between pt-6">
-            <Button type="button" onClick={() => setShowDeleteConfirm(true)} variant="destructive">
+            <Button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              variant="destructive"
+            >
               Delete Presentation
             </Button>
 
@@ -438,10 +508,14 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
           <p className="text-muted-foreground">
-            Are you sure you want to delete this presentation? This action cannot be undone.
+            Are you sure you want to delete this presentation? This action
+            cannot be undone.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
@@ -451,6 +525,5 @@ export default function EditPage({ params }: { params: { shortname: string } }) 
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
-

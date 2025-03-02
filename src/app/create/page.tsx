@@ -1,16 +1,17 @@
-"use client"
+/* eslint-disable @typescript-eslint/no-unused-vars */
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { addPresentation, currentUser } from "~/lib/data"
-import { FileUpload } from "~/components/file-upload"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { addPresentation, currentUser } from "~/lib/data";
+import { FileUpload } from "~/components/file-upload";
 
 export default function CreatePage() {
-  const router = useRouter()
-  const user = currentUser
+  const router = useRouter();
+  const user = currentUser;
 
   const [formData, setFormData] = useState({
     shortname: "",
@@ -27,48 +28,53 @@ export default function CreatePage() {
     kahootSelfHostUrl: "",
     visibility: "public",
     credits: "",
-  })
+  });
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
     // Clear error for this field
     if (errors[name]) {
       setErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
     }
-  }
+  };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target
-    setFormData((prev) => ({ ...prev, [name]: checked }))
-  }
+    const { name, checked } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: checked }));
+  };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "Title is required"
+      newErrors.title = "Title is required";
     }
 
     if (!formData.shortname.trim()) {
-      newErrors.shortname = "Shortname is required"
+      newErrors.shortname = "Shortname is required";
     } else if (!/^[a-z0-9-]+$/.test(formData.shortname)) {
-      newErrors.shortname = "Shortname can only contain lowercase letters, numbers, and hyphens"
+      newErrors.shortname =
+        "Shortname can only contain lowercase letters, numbers, and hyphens";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (validateForm()) {
       // Add the new presentation
@@ -82,7 +88,9 @@ export default function CreatePage() {
           ? {
               url: formData.presentationUrl,
               isLocked: formData.presentationIsLocked,
-              password: formData.presentationIsLocked ? formData.presentationPassword : undefined,
+              password: formData.presentationIsLocked
+                ? formData.presentationPassword
+                : undefined,
             }
           : undefined,
         handoutFile: formData.handoutUrl
@@ -100,37 +108,39 @@ export default function CreatePage() {
         visibility: formData.visibility as "public" | "private",
         owner: user.id,
         credits: formData.credits || undefined,
-      })
+      });
 
       // Redirect to the presentations page
-      router.push("/manage")
+      router.push("/manage");
     }
-  }
+  };
 
-  const handleFileUpload = (type: "presentation" | "handout" | "research") => async (file: File) => {
-    // In a real app, you would upload the file to your storage service here
-    // For now, we'll just simulate it with a fake URL
-    const fakeUrl = `https://storage.example.com/${type}/${file.name}`
+  const handleFileUpload =
+    (type: "presentation" | "handout" | "research") => async (file: File) => {
+      // In a real app, you would upload the file to your storage service here
+      // For now, we'll just simulate it with a fake URL
+      const fakeUrl = `https://storage.example.com/${type}/${file.name}`;
 
-    setFormData((prev) => ({
-      ...prev,
-      [`${type}Url`]: fakeUrl,
-    }))
-  }
+      setFormData((prev) => ({
+        ...prev,
+        [`${type}Url`]: fakeUrl,
+      }));
+    };
 
-  const handleFileDelete = (type: "presentation" | "handout" | "research") => () => {
-    setFormData((prev) => ({
-      ...prev,
-      [`${type}Url`]: "",
-    }))
-  }
+  const handleFileDelete =
+    (type: "presentation" | "handout" | "research") => () => {
+      setFormData((prev) => ({
+        ...prev,
+        [`${type}Url`]: "",
+      }));
+    };
 
   const handleToggleLock = () => {
     setFormData((prev) => ({
       ...prev,
       presentationIsLocked: !prev.presentationIsLocked,
-    }))
-  }
+    }));
+  };
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -152,7 +162,10 @@ export default function CreatePage() {
               <h2 className="text-xl font-semibold">Basic Information</h2>
 
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Title *
                 </label>
                 <input
@@ -165,11 +178,16 @@ export default function CreatePage() {
                     errors.title ? "border-red-500" : "border-gray-300"
                   }`}
                 />
-                {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+                {errors.title && (
+                  <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+                )}
               </div>
 
               <div>
-                <label htmlFor="shortname" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="shortname"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Shortname *
                 </label>
                 <input
@@ -183,14 +201,21 @@ export default function CreatePage() {
                   }`}
                   placeholder="e.g., my-presentation"
                 />
-                {errors.shortname && <p className="text-red-500 text-sm mt-1">{errors.shortname}</p>}
+                {errors.shortname && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.shortname}
+                  </p>
+                )}
                 <p className="text-gray-500 text-sm mt-1">
                   Used in URLs. Only lowercase letters, numbers, and hyphens.
                 </p>
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Description
                 </label>
                 <textarea
@@ -204,7 +229,10 @@ export default function CreatePage() {
               </div>
 
               <div>
-                <label htmlFor="visibility" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="visibility"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Visibility
                 </label>
                 <select
@@ -220,7 +248,10 @@ export default function CreatePage() {
               </div>
 
               <div>
-                <label htmlFor="credits" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="credits"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Credits
                 </label>
                 <input
@@ -240,7 +271,10 @@ export default function CreatePage() {
               <h2 className="text-xl font-semibold">Media</h2>
 
               <div>
-                <label htmlFor="logo" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="logo"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Logo URL
                 </label>
                 <input
@@ -255,7 +289,10 @@ export default function CreatePage() {
               </div>
 
               <div>
-                <label htmlFor="cover" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="cover"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Cover Image URL
                 </label>
                 <input
@@ -283,7 +320,9 @@ export default function CreatePage() {
                 onUpload={handleFileUpload("presentation")}
                 onDelete={handleFileDelete("presentation")}
                 onToggleLock={handleToggleLock}
-                onPreview={() => window.open(formData.presentationUrl, "_blank")}
+                onPreview={() =>
+                  window.open(formData.presentationUrl, "_blank")
+                }
               />
 
               <FileUpload
@@ -305,7 +344,10 @@ export default function CreatePage() {
 
             {formData.presentationIsLocked && (
               <div className="mt-4">
-                <label htmlFor="presentationPassword" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="presentationPassword"
+                  className="block text-sm font-medium mb-1"
+                >
                   Presentation Password
                 </label>
                 <input
@@ -326,7 +368,10 @@ export default function CreatePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="kahootPin" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="kahootPin"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Kahoot PIN
                 </label>
                 <input
@@ -338,11 +383,16 @@ export default function CreatePage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="123456 or 'none' for loading"
                 />
-                <p className="text-gray-500 text-sm mt-1">Enter 'none' to show a loading animation</p>
+                <p className="text-gray-500 text-sm mt-1">
+                  Enter &apos;none&apos; to show a loading animation
+                </p>
               </div>
 
               <div>
-                <label htmlFor="kahootSelfHostUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="kahootSelfHostUrl"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Kahoot Self-Host URL
                 </label>
                 <input
@@ -375,6 +425,5 @@ export default function CreatePage() {
         </form>
       </div>
     </div>
-  )
+  );
 }
-

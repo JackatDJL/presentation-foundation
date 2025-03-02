@@ -1,0 +1,478 @@
+{
+  "id": "a41ba63a-1d91-434e-94ce-81a407ea1e34",
+  "prevId": "2d44c26b-d90e-4fb7-a180-fa0a268281d0",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.presentation-foundation_files": {
+      "name": "presentation-foundation_files",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar(48)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ufs_url": {
+          "name": "ufs_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_locked": {
+          "name": "is_locked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "presentation_id": {
+          "name": "presentation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner": {
+          "name": "owner",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "file_id_idx": {
+          "name": "file_id_idx",
+          "columns": [
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "file_presentation_id_idx": {
+          "name": "file_presentation_id_idx",
+          "columns": [
+            {
+              "expression": "presentation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "file_owner_idx": {
+          "name": "file_owner_idx",
+          "columns": [
+            {
+              "expression": "owner",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "file_type_presentation_id_idx": {
+          "name": "file_type_presentation_id_idx",
+          "columns": [
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "presentation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "presentation-foundation_files_id_unique": {
+          "name": "presentation-foundation_files_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.presentation-foundation_presentations": {
+      "name": "presentation-foundation_presentations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "shortname": {
+          "name": "shortname",
+          "type": "varchar(25)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "logo": {
+          "name": "logo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cover": {
+          "name": "cover",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "presentation": {
+          "name": "presentation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "handout": {
+          "name": "handout",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "research": {
+          "name": "research",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kahoot_pin": {
+          "name": "kahoot_pin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kahoot_self_host_url": {
+          "name": "kahoot_self_host_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "credits": {
+          "name": "credits",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "visibility_types",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'private'"
+        },
+        "owner": {
+          "name": "owner",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "pr_id_idx": {
+          "name": "pr_id_idx",
+          "columns": [
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pr_shortname_idx": {
+          "name": "pr_shortname_idx",
+          "columns": [
+            {
+              "expression": "shortname",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pr_owner_idx": {
+          "name": "pr_owner_idx",
+          "columns": [
+            {
+              "expression": "owner",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pr_owner_visibility_idx": {
+          "name": "pr_owner_visibility_idx",
+          "columns": [
+            {
+              "expression": "owner",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "visibility",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pr_visibility_idx": {
+          "name": "pr_visibility_idx",
+          "columns": [
+            {
+              "expression": "visibility",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "presentation-foundation_presentations_logo_presentation-foundation_files_id_fk": {
+          "name": "presentation-foundation_presentations_logo_presentation-foundation_files_id_fk",
+          "tableFrom": "presentation-foundation_presentations",
+          "tableTo": "presentation-foundation_files",
+          "columnsFrom": [
+            "logo"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "presentation-foundation_presentations_cover_presentation-foundation_files_id_fk": {
+          "name": "presentation-foundation_presentations_cover_presentation-foundation_files_id_fk",
+          "tableFrom": "presentation-foundation_presentations",
+          "tableTo": "presentation-foundation_files",
+          "columnsFrom": [
+            "cover"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "presentation-foundation_presentations_presentation_presentation-foundation_files_id_fk": {
+          "name": "presentation-foundation_presentations_presentation_presentation-foundation_files_id_fk",
+          "tableFrom": "presentation-foundation_presentations",
+          "tableTo": "presentation-foundation_files",
+          "columnsFrom": [
+            "presentation"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "presentation-foundation_presentations_handout_presentation-foundation_files_id_fk": {
+          "name": "presentation-foundation_presentations_handout_presentation-foundation_files_id_fk",
+          "tableFrom": "presentation-foundation_presentations",
+          "tableTo": "presentation-foundation_files",
+          "columnsFrom": [
+            "handout"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "presentation-foundation_presentations_research_presentation-foundation_files_id_fk": {
+          "name": "presentation-foundation_presentations_research_presentation-foundation_files_id_fk",
+          "tableFrom": "presentation-foundation_presentations",
+          "tableTo": "presentation-foundation_files",
+          "columnsFrom": [
+            "research"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "presentation-foundation_presentations_id_unique": {
+          "name": "presentation-foundation_presentations_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id"
+          ]
+        },
+        "presentation-foundation_presentations_shortname_unique": {
+          "name": "presentation-foundation_presentations_shortname_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "shortname"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.file_types": {
+      "name": "file_types",
+      "schema": "public",
+      "values": [
+        "logo",
+        "cover",
+        "presentation",
+        "handout",
+        "research"
+      ]
+    },
+    "public.visibility_types": {
+      "name": "visibility_types",
+      "schema": "public",
+      "values": [
+        "public",
+        "private"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
