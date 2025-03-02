@@ -11,6 +11,7 @@ import {
   boolean,
   integer,
   pgEnum,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -19,9 +20,7 @@ import {
  *
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
-export const createTable = pgTableCreator(
-  (name) => `presentation-foundation_${name}`,
-);
+export const createTable = pgTableCreator((name) => `pr.f-${name}`);
 
 export const file_types = pgEnum("file_types", [
   "logo",
@@ -39,7 +38,7 @@ export const visibility_types = pgEnum("visibility_types", [
 export const files = createTable(
   "files",
   {
-    id: integer("id").primaryKey().unique(),
+    id: uuid("id").primaryKey().defaultRandom().unique(),
     name: text("name").notNull(),
     type: file_types("type").notNull(),
     datatype: text("type").notNull(),
@@ -49,7 +48,7 @@ export const files = createTable(
     isLocked: boolean("is_locked").default(false),
     password: text("password"),
 
-    presentationId: integer("presentation_id").notNull(),
+    presentationId: uuid("presentation_id").notNull(),
     owner: varchar("owner", { length: 32 }).notNull(),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -73,22 +72,25 @@ export const files = createTable(
 export const presentations = createTable(
   "presentations",
   {
-    id: integer("id").primaryKey().unique(),
+    id: uuid("id").primaryKey().defaultRandom().unique(),
     shortname: varchar("shortname", { length: 25 }).notNull().unique(),
     title: text("title").notNull(),
     description: text("description"),
 
-    logo: integer("logo").references(() => files.id),
-    cover: integer("cover").references(() => files.id),
-    presentation: integer("presentation").references(() => files.id),
-    handout: integer("handout").references(() => files.id),
-    research: integer("research").references(() => files.id),
+    logo: uuid("logo").references(() => files.id),
+    cover: uuid("cover").references(() => files.id),
+    presentation: uuid("presentation").references(() => files.id),
+    handout: uuid("handout").references(() => files.id),
+    research: uuid("research").references(() => files.id),
 
     kahootPin: text("kahoot_pin"),
     kahootSelfHostUrl: text("kahoot_self_host_url"),
 
     credits: text("credits"),
 
+    // visibility: varchar({ enum: ["public", "private"] })
+    //   .default("private")
+    //   .notNull(),
     visibility: visibility_types("visibility").default("private").notNull(),
 
     owner: varchar("owner", { length: 32 }).notNull(),

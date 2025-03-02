@@ -159,7 +159,7 @@ export default function PresentationDetail({ presentation }: { presentation: Pre
         </div>
 
         {/* Kahoot section */}
-        {(presentation.kahootPin ?? presentation.kahootSelfHostUrl) && (
+        {(presentation.kahootPin || presentation.kahootSelfHostUrl) && (
           <div className="mb-12 max-w-3xl mx-auto">
             <h2 className="text-2xl font-semibold mb-6">Interactive Quiz</h2>
             <KahootSection kahootPin={presentation.kahootPin} kahootSelfHostUrl={presentation.kahootSelfHostUrl} />
@@ -177,7 +177,7 @@ export default function PresentationDetail({ presentation }: { presentation: Pre
       {/* Password modal */}
       {showPasswordModal && (
         <PasswordModal
-          correctPassword={presentation.presentationFile?.password ?? ""}
+          correctPassword={presentation.presentationFile?.password || ""}
           onClose={() => setShowPasswordModal(false)}
           onSuccess={() => {
             window.location.href = targetUrl

@@ -1,17 +1,25 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip"
+import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 interface KahootSectionProps {
-  kahootPin?: string
-  kahootSelfHostUrl?: string
+  kahootPin?: string;
+  kahootSelfHostUrl?: string;
 }
 
-export default function KahootSection({ kahootPin, kahootSelfHostUrl }: KahootSectionProps) {
+export default function KahootSection({
+  kahootPin,
+  kahootSelfHostUrl,
+}: KahootSectionProps) {
   // If neither pin nor self-host URL is available, don't render anything
   if (!kahootPin && !kahootSelfHostUrl) {
-    return null
+    return null;
   }
 
   // If pin is "none", show loading animation
@@ -25,7 +33,7 @@ export default function KahootSection({ kahootPin, kahootSelfHostUrl }: KahootSe
         </div>
         <p className="mt-4 text-pink-400">Loading Kahoot quiz...</p>
       </div>
-    )
+    );
   }
 
   // If only pin is available (and not "none")
@@ -59,17 +67,24 @@ export default function KahootSection({ kahootPin, kahootSelfHostUrl }: KahootSe
                 d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <span className="text-pink-400 font-bold">Join Kahoot Quiz (PIN: {kahootPin})</span>
+            <span className="text-pink-400 font-bold">
+              Join Kahoot Quiz (PIN: {kahootPin})
+            </span>
           </div>
         </div>
       </Link>
-    )
+    );
   }
 
   // If only self-host URL is available
   if (!kahootPin && kahootSelfHostUrl) {
     return (
-      <Link href={kahootSelfHostUrl} target="_blank" rel="noopener noreferrer" className="inline-block">
+      <Link
+        href={kahootSelfHostUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block"
+      >
         <div className="relative px-8 py-4 bg-gray-900 rounded-lg border-2 border-pink-400 hover:border-pink-300 transition-colors">
           <div className="flex items-center space-x-2">
             <svg
@@ -92,11 +107,13 @@ export default function KahootSection({ kahootPin, kahootSelfHostUrl }: KahootSe
                 d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <span className="text-pink-400 font-bold">Play Self-Hosted Kahoot</span>
+            <span className="text-pink-400 font-bold">
+              Play Self-Hosted Kahoot
+            </span>
           </div>
         </div>
       </Link>
-    )
+    );
   }
 
   // If both pin and self-host URL are available
@@ -132,14 +149,16 @@ export default function KahootSection({ kahootPin, kahootSelfHostUrl }: KahootSe
                     d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <span className="text-pink-400 font-bold">Join Kahoot Quiz (PIN: {kahootPin})</span>
+                <span className="text-pink-400 font-bold">
+                  Join Kahoot Quiz (PIN: {kahootPin})
+                </span>
               </div>
             </div>
           </Link>
         </TooltipTrigger>
         <TooltipContent>
           <Link
-            href={kahootSelfHostUrl ?? "#"}
+            href={kahootSelfHostUrl || "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-pink-400 hover:underline"
@@ -149,6 +168,5 @@ export default function KahootSection({ kahootPin, kahootSelfHostUrl }: KahootSe
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
 }
-

@@ -13,7 +13,6 @@ interface PasswordModalProps {
 export default function PasswordModal({ correctPassword, onClose, onSuccess }: PasswordModalProps) {
   const [password, setPassword] = useState("")
   const [error, setError] = useState(false)
-  const [isDarkMode, setIsDarkMode] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,8 +26,8 @@ export default function PasswordModal({ correctPassword, onClose, onSuccess }: P
   }
 
   return (
-    <div className={`fixed inset-0 ${isDarkMode ? "bg-gray-900" : "bg-black"} bg-opacity-50 flex items-center justify-center z-50`}>
-      <div className={`${isDarkMode ? "bg-gray-800 text-white" : "bg-white"} rounded-lg p-8 max-w-md w-full`}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full">
         <h2 className="text-2xl font-bold mb-4">Password Required</h2>
         <p className="mb-6 text-gray-600">
           This presentation is password protected. Please enter the password to continue.
@@ -46,7 +45,7 @@ export default function PasswordModal({ correctPassword, onClose, onSuccess }: P
               placeholder="Enter password"
               className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 error ? "border-red-500" : "border-gray-300"
-              } ${isDarkMode ? "bg-gray-700 text-white" : ""}`}
+              }`}
             />
             {error && <p className="text-red-500 text-sm mt-1">Incorrect password. Please try again.</p>}
           </div>
@@ -60,17 +59,8 @@ export default function PasswordModal({ correctPassword, onClose, onSuccess }: P
             </button>
           </div>
         </form>
-
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-          >
-            Toggle Dark Mode
-          </button>
-        </div>
       </div>
     </div>
   )
 }
+

@@ -6,12 +6,13 @@ import type React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { addPresentation, currentUser } from "~/lib/data";
-import { FileUpload } from "~/components/file-upload";
+// import { addPresentation, currentUser } from "~/lib/data";
+import { Button } from "~/components/ui/button";
+import FilePreview from "~/components/file-preview";
 
 export default function CreatePage() {
   const router = useRouter();
-  const user = currentUser;
+  // const user = currentUser;
 
   const [formData, setFormData] = useState({
     shortname: "",
@@ -31,6 +32,10 @@ export default function CreatePage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isCheckingShortname, setIsCheckingShortname] = useState(false);
+  const [shortnameStatus, setShortnameStatus] = useState<
+    "available" | "taken" | null
+  >(null);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -48,11 +53,26 @@ export default function CreatePage() {
         return newErrors;
       });
     }
+
+    // Reset shortname status when shortname changes
+    if (name === "shortname") {
+      setShortnameStatus(null);
+    }
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: checked }));
+  const checkShortname = () => {
+    setIsCheckingShortname(true);
+    const isAvailable = true;
+    // const isAvailable = isShortNameAvailable(formData.shortname);
+    setShortnameStatus(isAvailable ? "available" : "taken");
+    setIsCheckingShortname(false);
+
+    if (!isAvailable) {
+      setErrors((prev) => ({
+        ...prev,
+        shortname: "This shortname is already taken",
+      }));
+    }
   };
 
   const validateForm = () => {
@@ -67,6 +87,9 @@ export default function CreatePage() {
     } else if (!/^[a-z0-9-]+$/.test(formData.shortname)) {
       newErrors.shortname =
         "Shortname can only contain lowercase letters, numbers, and hyphens";
+    } else if (false) {
+      // } else if (!isShortNameAvailable(formData.shortname)) {
+      newErrors.shortname = "This shortname is already taken";
     }
 
     setErrors(newErrors);
@@ -78,37 +101,37 @@ export default function CreatePage() {
 
     if (validateForm()) {
       // Add the new presentation
-      addPresentation({
-        shortname: formData.shortname,
-        title: formData.title,
-        description: formData.description || undefined,
-        logo: formData.logo || undefined,
-        cover: formData.cover || undefined,
-        presentationFile: formData.presentationUrl
-          ? {
-              url: formData.presentationUrl,
-              isLocked: formData.presentationIsLocked,
-              password: formData.presentationIsLocked
-                ? formData.presentationPassword
-                : undefined,
-            }
-          : undefined,
-        handoutFile: formData.handoutUrl
-          ? {
-              url: formData.handoutUrl,
-            }
-          : undefined,
-        researchFile: formData.researchUrl
-          ? {
-              url: formData.researchUrl,
-            }
-          : undefined,
-        kahootPin: formData.kahootPin || undefined,
-        kahootSelfHostUrl: formData.kahootSelfHostUrl || undefined,
-        visibility: formData.visibility as "public" | "private",
-        owner: user.id,
-        credits: formData.credits || undefined,
-      });
+      // addPresentation({
+      //   shortname: formData.shortname,
+      //   title: formData.title,
+      //   description: formData.description || undefined,
+      //   logo: formData.logo || undefined,
+      //   cover: formData.cover || undefined,
+      //   presentationFile: formData.presentationUrl
+      //     ? {
+      //         url: formData.presentationUrl,
+      //         isLocked: formData.presentationIsLocked,
+      //         password: formData.presentationIsLocked
+      //           ? formData.presentationPassword
+      //           : undefined,
+      //       }
+      //     : undefined,
+      //   handoutFile: formData.handoutUrl
+      //     ? {
+      //         url: formData.handoutUrl,
+      //       }
+      //     : undefined,
+      //   researchFile: formData.researchUrl
+      //     ? {
+      //         url: formData.researchUrl,
+      //       }
+      //     : undefined,
+      //   kahootPin: formData.kahootPin || undefined,
+      //   kahootSelfHostUrl: formData.kahootSelfHostUrl || undefined,
+      //   visibility: formData.visibility as "public" | "private",
+      //   owner: user.id,
+      //   credits: formData.credits || undefined,
+      // });
 
       // Redirect to the presentations page
       router.push("/manage");
@@ -146,16 +169,13 @@ export default function CreatePage() {
     <div className="container mx-auto px-4 py-12">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Create New Presentation</h1>
-        <Link
-          href="/manage"
-          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-        >
-          Back to Manage
-        </Link>
+        <Button variant="outline" asChild>
+          <Link href="/manage">Back to Manage</Link>
+        </Button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-card text-card-foreground rounded-lg shadow">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Basic Information */}
             <div className="space-y-4">
@@ -164,7 +184,7 @@ export default function CreatePage() {
               <div>
                 <label
                   htmlFor="title"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium mb-1"
                 >
                   Title *
                 </label>
@@ -174,39 +194,61 @@ export default function CreatePage() {
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.title ? "border-red-500" : "border-gray-300"
+                  className={`w-full px-4 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                    errors.title ? "border-destructive" : "border-input"
                   }`}
                 />
                 {errors.title && (
-                  <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+                  <p className="text-destructive text-sm mt-1">
+                    {errors.title}
+                  </p>
                 )}
               </div>
 
               <div>
                 <label
                   htmlFor="shortname"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium mb-1"
                 >
                   Shortname *
                 </label>
-                <input
-                  type="text"
-                  id="shortname"
-                  name="shortname"
-                  value={formData.shortname}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.shortname ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="e.g., my-presentation"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    id="shortname"
+                    name="shortname"
+                    value={formData.shortname}
+                    onChange={handleChange}
+                    className={`flex-1 px-4 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                      errors.shortname ? "border-destructive" : "border-input"
+                    }`}
+                    placeholder="e.g., my-presentation"
+                  />
+                  <Button
+                    type="button"
+                    onClick={checkShortname}
+                    disabled={!formData.shortname || isCheckingShortname}
+                    variant="outline"
+                  >
+                    {isCheckingShortname ? "Checking..." : "Check Availability"}
+                  </Button>
+                </div>
                 {errors.shortname && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p className="text-destructive text-sm mt-1">
                     {errors.shortname}
                   </p>
                 )}
-                <p className="text-gray-500 text-sm mt-1">
+                {shortnameStatus === "available" && (
+                  <p className="text-green-500 text-sm mt-1">
+                    This shortname is available!
+                  </p>
+                )}
+                {shortnameStatus === "taken" && (
+                  <p className="text-destructive text-sm mt-1">
+                    This shortname is already taken.
+                  </p>
+                )}
+                <p className="text-muted-foreground text-sm mt-1">
                   Used in URLs. Only lowercase letters, numbers, and hyphens.
                 </p>
               </div>
@@ -224,7 +266,7 @@ export default function CreatePage() {
                   value={formData.description}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -240,7 +282,7 @@ export default function CreatePage() {
                   name="visibility"
                   value={formData.visibility}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="public">Public</option>
                   <option value="private">Private</option>
@@ -260,7 +302,7 @@ export default function CreatePage() {
                   name="credits"
                   value={formData.credits}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="e.g., John Doe or leave blank to use your username"
                 />
               </div>
@@ -269,76 +311,78 @@ export default function CreatePage() {
             {/* Media */}
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Media</h2>
+              <FilePreview
+                fileType="logo"
+                fileUrl={formData.logo}
+                // onUpload={(file) => {
+                //   // In a real app, you would upload the file and get a URL
+                //   const fakeUrl = `https://storage.example.com/logos/${file.name}`;
+                //   setFormData((prev) => ({ ...prev, logo: fakeUrl }));
+                // }}
+                onDelete={() => setFormData((prev) => ({ ...prev, logo: "" }))}
+              />
 
-              <div>
-                <label
-                  htmlFor="logo"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Logo URL
-                </label>
-                <input
-                  type="text"
-                  id="logo"
-                  name="logo"
-                  value={formData.logo}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://example.com/logo.png"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="cover"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Cover Image URL
-                </label>
-                <input
-                  type="text"
-                  id="cover"
-                  name="cover"
-                  value={formData.cover}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://example.com/cover.jpg"
-                />
-              </div>
+              <FilePreview
+                fileType="cover"
+                fileUrl={formData.cover}
+                // onUpload={(file) => {
+                //   // In a real app, you would upload the file and get a URL
+                //   const fakeUrl = `https://storage.example.com/covers/${file.name}`;
+                //   setFormData((prev) => ({ ...prev, cover: fakeUrl }));
+                // }}
+                onDelete={() => setFormData((prev) => ({ ...prev, cover: "" }))}
+              />
             </div>
           </div>
 
           {/* Resources */}
-          <div className="pt-6 border-t border-gray-200">
+          <div className="pt-6 border-t border-border">
             <h2 className="text-xl font-semibold mb-4">Resources</h2>
-
-            <div className="grid gap-6">
-              <FileUpload
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FilePreview
                 fileType="presentation"
                 fileUrl={formData.presentationUrl}
                 isLocked={formData.presentationIsLocked}
-                onUpload={handleFileUpload("presentation")}
-                onDelete={handleFileDelete("presentation")}
-                onToggleLock={handleToggleLock}
-                onPreview={() =>
-                  window.open(formData.presentationUrl, "_blank")
+                // onUpload={(file) => {
+                //   const fakeUrl = `https://storage.example.com/presentations/${file.name}`;
+                //   setFormData((prev) => ({
+                //     ...prev,
+                //     presentationUrl: fakeUrl,
+                //   }));
+                // }}
+                onDelete={() =>
+                  setFormData((prev) => ({ ...prev, presentationUrl: "" }))
+                }
+                onUnlock={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    presentationIsLocked: !prev.presentationIsLocked,
+                  }))
                 }
               />
 
-              <FileUpload
+              <FilePreview
                 fileType="handout"
                 fileUrl={formData.handoutUrl}
-                onUpload={handleFileUpload("handout")}
-                onDelete={handleFileDelete("handout")}
-                onPreview={() => window.open(formData.handoutUrl, "_blank")}
+                // onUpload={(file) => {
+                //   const fakeUrl = `https://storage.example.com/handouts/${file.name}`;
+                //   setFormData((prev) => ({ ...prev, handoutUrl: fakeUrl }));
+                // }}
+                onDelete={() =>
+                  setFormData((prev) => ({ ...prev, handoutUrl: "" }))
+                }
               />
 
-              <FileUpload
+              <FilePreview
                 fileType="research"
                 fileUrl={formData.researchUrl}
-                onUpload={handleFileUpload("research")}
-                onDelete={handleFileDelete("research")}
-                onPreview={() => window.open(formData.researchUrl, "_blank")}
+                // onUpload={(file) => {
+                //   const fakeUrl = `https://storage.example.com/research/${file.name}`;
+                //   setFormData((prev) => ({ ...prev, researchUrl: fakeUrl }));
+                // }}
+                onDelete={() =>
+                  setFormData((prev) => ({ ...prev, researchUrl: "" }))
+                }
               />
             </div>
 
@@ -356,14 +400,14 @@ export default function CreatePage() {
                   name="presentationPassword"
                   value={formData.presentationPassword}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             )}
           </div>
 
           {/* Kahoot */}
-          <div className="pt-6 border-t border-gray-200">
+          <div className="pt-6 border-t border-border">
             <h2 className="text-xl font-semibold mb-4">Interactive Quiz</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -380,7 +424,7 @@ export default function CreatePage() {
                   name="kahootPin"
                   value={formData.kahootPin}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="123456 or 'none' for loading"
                 />
                 <p className="text-gray-500 text-sm mt-1">
@@ -401,7 +445,7 @@ export default function CreatePage() {
                   name="kahootSelfHostUrl"
                   value={formData.kahootSelfHostUrl}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="https://kahoot.it/challenge/123456"
                 />
               </div>
@@ -409,18 +453,10 @@ export default function CreatePage() {
           </div>
 
           <div className="flex justify-end space-x-4 pt-6">
-            <Link
-              href="/manage"
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Create Presentation
-            </button>
+            <Button variant="outline" asChild>
+              <Link href="/manage">Cancel</Link>
+            </Button>
+            <Button type="submit">Create Presentation</Button>
           </div>
         </form>
       </div>

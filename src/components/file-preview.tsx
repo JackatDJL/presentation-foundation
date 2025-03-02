@@ -11,7 +11,7 @@ interface FilePreviewProps {
   fileUrl?: string
   fileType: FileType
   isLocked?: boolean
-  onUnlock?: FileType extends "presentation" ? () => void : never
+  onUnlock?: fileType extends "presentation" ? () => void : never
   onUpload?: () => void
   onDelete?: () => void
 }
@@ -32,7 +32,7 @@ export default function FilePreview({
   // Get file extension
   const getFileExtension = (url?: string) => {
     if (!url) return ""
-    return url.split(".").pop()?.toLowerCase() ?? ""
+    return url.split(".").pop()?.toLowerCase() || ""
   }
 
   // Get file icon based on type
