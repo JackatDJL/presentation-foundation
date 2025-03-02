@@ -45,6 +45,7 @@ export const files = createTable(
     size: integer().notNull(),
     key: varchar("key", { length: 48 }).notNull(),
     ufsUrl: text("ufs_url").notNull(),
+
     isLocked: boolean("is_locked").default(false),
     password: text("password"),
 

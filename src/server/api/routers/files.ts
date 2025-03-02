@@ -5,7 +5,7 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { files } from "~/server/db/schema";
 
-export const filesRouter = createTRPCRouter({
+export const fileRouter = createTRPCRouter({
   create: publicProcedure
     .input(
       z.object({
@@ -15,10 +15,13 @@ export const filesRouter = createTRPCRouter({
         size: z.number().int(),
         key: z.string().length(48),
         ufsUrl: z.string().url(),
+
         isLocked: z.boolean(),
         password: z.string().optional(),
+
         presentationId: z.string().uuid(),
         owner: z.string().length(32),
+
         createdAt: z.string().datetime(),
         updatedAt: z.string().datetime(),
       }),
@@ -32,18 +35,18 @@ export const filesRouter = createTRPCRouter({
         size: input.size,
         key: input.key,
         ufsUrl: input.ufsUrl,
+
         isLocked: input.isLocked,
+        password: input.password,
+
         presentationId: input.presentationId,
         owner: input.owner,
+
         createdAt: new Date(input.createdAt),
         updatedAt: new Date(input.updatedAt),
       };
 
       const response = await db.insert(files).values(file).returning();
-
-      // if (input.password) {
-      //   db.insert(files).values({id: ,password: input.password})
-      // }
 
       console.log(response);
 
