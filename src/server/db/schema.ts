@@ -40,8 +40,8 @@ export const files = createTable(
   {
     id: uuid("id").primaryKey().defaultRandom().unique(),
     name: text("name").notNull(),
-    type: file_types("type").notNull(),
-    datatype: text("type").notNull(),
+    fileType: file_types("fileType").notNull(),
+    dataType: text("dataType").notNull(),
     size: integer().notNull(),
     key: varchar("key", { length: 48 }).notNull(),
     ufsUrl: text("ufs_url").notNull(),
@@ -62,8 +62,8 @@ export const files = createTable(
         table.presentationId,
       ),
       fileOwnerIdx: index("file_owner_idx").on(table.owner),
-      fileTypePresentationIdIdx: index("file_type_presentation_id_idx").on(
-        table.type,
+      fileTypePresentationIdIdx: index("fileType_presentation_id_idx").on(
+        table.fileType,
         table.presentationId,
       ),
     };
@@ -85,7 +85,7 @@ export const presentations = createTable(
     research: uuid("research").references(() => files.id),
 
     kahootPin: text("kahoot_pin"),
-    kahootSelfHostUrl: text("kahoot_self_host_url"),
+    kahootId: text("kahoot_id"),
 
     credits: text("credits"),
 
@@ -108,6 +108,8 @@ export const presentations = createTable(
         table.visibility,
       ),
       prVisibilityIdx: index("pr_visibility_idx").on(table.visibility),
+      prKahootPinIdx: index("pr_kahoot_pin_idx").on(table.kahootPin),
+      prKahootIdIdx: index("pr_kahoot_id_idx").on(table.kahootId),
     };
   },
 );

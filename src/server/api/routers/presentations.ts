@@ -23,7 +23,7 @@ export const presentationRouter = createTRPCRouter({
         research: z.string().uuid().optional(),
 
         kahootPin: z.string().optional(),
-        kahootSelfHostUrl: z.string().url().optional(),
+        kahootId: z.string().optional(), // TODO: Make it Also Assemble it By itself (by ID)
 
         credits: z.string().optional(),
 
@@ -35,7 +35,7 @@ export const presentationRouter = createTRPCRouter({
         updatedAt: z.string().datetime(),
       }),
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       const presentation: typeof presentations.$inferInsert = {
         id: crypto.randomUUID(),
         shortname: input.shortname,
@@ -49,7 +49,7 @@ export const presentationRouter = createTRPCRouter({
         research: input.research,
 
         kahootPin: input.kahootPin,
-        kahootSelfHostUrl: input.kahootSelfHostUrl,
+        kahootId: input.kahootId,
 
         credits: input.credits,
 
@@ -65,7 +65,7 @@ export const presentationRouter = createTRPCRouter({
         .values(presentation)
         .returning();
 
-      console.log(response);
+      // console.log("Inserted Data into Database", response);
 
       return response;
     }),
@@ -79,8 +79,15 @@ export const presentationRouter = createTRPCRouter({
         .from(presentations)
         .where(eq(presentations.shortname, input));
 
-      console.log(isAvailable);
-
       return isAvailable.length === 0;
     }),
+
+  getByShortname: publicProcedure.input(z.string()).query(async ({ input }) => {
+    const presentation = await db
+      .select()
+      .from(presentations)
+      .where(eq(presentations.shortname, input));
+
+    return presentation[0];
+  }),
 });
