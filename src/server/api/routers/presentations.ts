@@ -16,12 +16,6 @@ export const presentationRouter = createTRPCRouter({
         title: z.string(),
         description: z.string().optional(),
 
-        logo: z.string().uuid().optional(),
-        cover: z.string().uuid().optional(),
-        presentation: z.string().uuid().optional(),
-        handout: z.string().uuid().optional(),
-        research: z.string().uuid().optional(),
-
         kahootPin: z.string().optional(),
         kahootId: z.string().optional(), // TODO: Make it Also Assemble it By itself (by ID)
 
@@ -41,12 +35,6 @@ export const presentationRouter = createTRPCRouter({
         shortname: input.shortname,
         title: input.title,
         description: input.description,
-
-        logo: input.logo,
-        cover: input.cover,
-        presentation: input.presentation,
-        handout: input.handout,
-        research: input.research,
 
         kahootPin: input.kahootPin,
         kahootId: input.kahootId,
@@ -91,7 +79,66 @@ export const presentationRouter = createTRPCRouter({
     return presentation[0];
   }),
 
-  // TODO: write getById Query
+  getIdByShortname: publicProcedure
+    .input(z.string().max(25))
+    .query(async ({ input }) => {
+      const presentation = await db
+        .select()
+        .from(presentations)
+        .where(eq(presentations.shortname, input));
 
-  // TODO: write Edit Presentation Mutation
+      return presentation[0]?.id;
+    }),
+
+  getById: publicProcedure.input(z.string().uuid()).query(async ({ input }) => {
+    const presentation = await db
+      .select()
+      .from(presentations)
+      .where(eq(presentations.id, input));
+
+    return presentation[0];
+  }),
+
+  edit: publicProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+
+        shortname: z.string().max(25),
+        title: z.string(),
+        description: z.string().optional(),
+
+        kahootPin: z.string().optional(),
+        kahootId: z.string().optional(),
+
+        credits: z.string().optional(),
+
+        visibility: z.enum(["public", "private"]).optional(),
+
+        updatedAt: z.string().datetime(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const presentation = await db
+        .update(presentations)
+        .set({
+          shortname: input.shortname,
+          title: input.title,
+          description: input.description,
+
+          kahootPin: input.kahootPin,
+          kahootId: input.kahootId,
+
+          credits: input.credits,
+
+          visibility: input.visibility,
+
+          updatedAt: new Date(input.updatedAt),
+        })
+        .where(eq(presentations.id, input.id))
+        .returning();
+
+      return presentation;
+    }),
+  //TODO: Implement Deletion
 });

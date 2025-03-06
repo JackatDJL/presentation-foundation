@@ -69,6 +69,7 @@ export const fileRouter = createTRPCRouter({
         .update(presentations)
         .set({
           [input.fileType]: response[0]?.id,
+          updatedAt: new Date(input.updatedAt),
         })
         .where(eq(presentations.id, input.presentationId));
 

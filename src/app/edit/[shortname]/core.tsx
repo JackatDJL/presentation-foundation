@@ -1,114 +1,143 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import type React from "react";
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import type { inferRouterInputs } from "@trpc/server";
-import type { AppRouter } from "~/server/api/root";
-
 import { useState } from "react";
-import FilePreview from "~/components/file-container";
+import FileContainer from "~/components/file-container";
 import { api } from "~/trpc/react";
+import type { presentations } from "~/server/db/schema";
 import { z } from "zod";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "~/components/ui/card";
+import { Label } from "~/components/ui/label";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Loader, Trash2 } from "react-feather";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 
 const uuidType = z.string().uuid();
 
-export function EditPage({ userId }: { userId: z.infer<typeof uuidType> }) {
-  type InputData = inferRouterInputs<AppRouter>["presentations"]["create"];
+export function EditPage({ id }: { id: z.infer<typeof uuidType> }) {
+  uuidType.parse(id);
+
+  const { data, isLoading, refetch } = api.presentations.getById.useQuery(id);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Presentation not found</h1>
+          <Button asChild>
+            <Link href="/manage">Back to Manage</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return <PresentationForm presentation={data} refetch={refetch} />;
+}
+
+function PresentationForm({
+  presentation,
+  refetch,
+}: {
+  presentation: typeof presentations.$inferSelect;
+  refetch: () => void;
+}) {
   const router = useRouter();
-
-  // TODO: Create and use an Edit Mutation
-  const creationMutation = api.presentations.create.useMutation({
-    onSuccess(data, variables, context) {
-      router.push(`/edit/${data[0]?.shortname}`);
-    },
-  });
-
-  // TODO: Remove "Owner" field from @/edit
-  // TODO: Remove "createdAt" from @/edit
-  const onSubmit = (formData: InputData): void => {
-    creationMutation.mutate({
-      shortname: formData.shortname,
-      title: formData.title,
-      description: formData.description,
-      kahootPin: formData.kahootPin,
-      kahootId: formData.kahootId,
-      credits: formData.credits,
-      visibility: formData.visibility,
-      owner: userId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-  };
-
   const [formData, setFormData] = useState({
-    shortname: "",
-    title: "",
-    description: "",
-    kahootPin: "",
-    kahootId: "",
-    visibility: "public",
-    credits: "",
+    shortname: presentation.shortname,
+    title: presentation.title,
+    description: presentation.description ?? "",
+    kahootPin: presentation.kahootPin ?? "",
+    kahootId: presentation.kahootId ?? "",
+    visibility: presentation.visibility,
+    credits: presentation.credits ?? "",
   });
-
-  // TODO: Query presentations.getById (IMPORTANT: the shorname is editable so we need to only use the id)
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCheckingShortname, setIsCheckingShortname] = useState(false);
   const [shortnameStatus, setShortnameStatus] = useState<
     "available" | "taken" | null
   >(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const { data: availabilityData, refetch } =
+  // TODO: Implement status Toasts
+  const editMutation = api.presentations.edit.useMutation({
+    onSuccess() {
+      // toast({
+      //   title: "Success",
+      //   description: "Presentation updated successfully",
+      // });
+      router.push("/manage");
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onError(error) {
+      // toast({
+      //   title: "Error",
+      //   description: error.message || "Failed to update presentation",
+      //   variant: "destructive",
+      // });
+    },
+  });
+
+  // TODO: Implement Deletion
+
+  // const deleteMutation = api.presentations.delete.useMutation({
+  //   onSuccess() {
+  //     toast({
+  //       title: "Success",
+  //       description: "Presentation deleted successfully",
+  //     });
+  //     router.push("/manage");
+  //   },
+  //   onError(error) {
+  //     toast({
+  //       title: "Error",
+  //       description: error.message || "Failed to delete presentation",
+  //       variant: "destructive",
+  //     });
+  //   },
+  // });
+
+  const { refetch: checkAvailability } =
     api.presentations.checkAvailability.useQuery(formData.shortname, {
-      enabled: false, // Don't run automatically
+      enabled: false,
     });
-
-  const callCheckShortname = async () => {
-    if (!formData.shortname) return;
-
-    setIsCheckingShortname(true);
-    const result = await refetch();
-    setIsCheckingShortname(false);
-
-    if (result.data === true) {
-      setShortnameStatus("available");
-    } else if (result.data === false) {
-      setShortnameStatus("taken");
-    }
-  };
-
-  // Handle form submission with loading state
-  const handleFormSubmit = async () => {
-    const block = await validateForm();
-    if (!block) return;
-
-    setIsSubmitting(true);
-    try {
-      onSubmit({
-        shortname: formData.shortname,
-        title: formData.title,
-        description: formData.description,
-        kahootPin: formData.kahootPin,
-        kahootId: formData.kahootId,
-        visibility: formData.visibility as "public" | "private",
-        credits: formData.credits,
-        owner: userId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-    } catch (error) {
-      throw new Error("Failed to create presentation: " + String(error));
-      // Handle submission error
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -133,15 +162,50 @@ export function EditPage({ userId }: { userId: z.infer<typeof uuidType> }) {
     }
   };
 
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const checkShortnameAvailability = async () => {
+    if (!formData.shortname) return false;
+
+    setIsCheckingShortname(true);
+
+    // If shortname hasn't changed, it's available
+    if (presentation.shortname === formData.shortname) {
+      setIsCheckingShortname(false);
+      setShortnameStatus("available");
+      return true;
+    }
+
+    // Otherwise check with the server
+    const response = await checkAvailability();
+    setIsCheckingShortname(false);
+
+    const isAvailable = response.data ?? false;
+    setShortnameStatus(isAvailable ? "available" : "taken");
+
+    return isAvailable;
+  };
+
   const validateForm = async () => {
     const newErrors: Record<string, string> = {};
 
+    // Check title
     if (!formData.title.trim()) {
       newErrors.title = "Title is required";
     }
 
-    await callCheckShortname();
-
+    // Check shortname
     if (!formData.shortname.trim()) {
       newErrors.shortname = "Shortname is required";
     } else if (!/^[a-z0-9-]+$/.test(formData.shortname)) {
@@ -149,302 +213,287 @@ export function EditPage({ userId }: { userId: z.infer<typeof uuidType> }) {
         "Shortname can only contain lowercase letters, numbers, and hyphens";
     }
 
-    // console.log(newErrors);
-    setErrors({});
     setErrors(newErrors);
-    // console.log(Object.keys(errors).length);
-    // console.log(availabilityData);
-    const allowCreation = Object.keys(errors).length === 0 && availabilityData;
-    // console.log(errors, newErrors);
-    // console.log(allowCreation);
-    return allowCreation;
+
+    // Check shortname availability if there are no other errors
+    const hasErrors = Object.keys(newErrors).length > 0;
+    if (hasErrors) return false;
+
+    const isAvailable = await checkShortnameAvailability();
+    return isAvailable;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const isValid = await validateForm();
+    if (!isValid) return;
+
+    editMutation.mutate({
+      id: presentation.id,
+      shortname: formData.shortname,
+      title: formData.title,
+      description: formData.description || undefined,
+      kahootPin: formData.kahootPin || undefined,
+      kahootId: formData.kahootId || undefined,
+      visibility: formData.visibility,
+      credits: formData.credits || undefined,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleDelete = () => {
+    // deleteMutation.mutate({ id: presentation.id });
+    setIsDeleteDialogOpen(false);
   };
 
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex justify-between items-center mb-8">
-        {/** TODO: Edit {presentation.title} */}
-        <h1 className="text-3xl font-bold">Edit Presentation</h1>
-        <Button variant="outline" asChild>
-          <Link href="/manage">Back to Manage</Link>
-        </Button>
-        {/* TODO: Implement the View Button */}
-        {/* <Button variant="secondary" asChild>
-            <Link href={`/?i=${shortname}`}>View</Link>
-          </Button> */}
+        <h1 className="text-3xl font-bold">Edit {presentation.title}</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/manage">Back to Manage</Link>
+          </Button>
+          {presentation.shortname && (
+            <Button variant="secondary" asChild>
+              <Link href={`/p/${presentation.shortname}`}>View</Link>
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="bg-card text-card-foreground rounded-lg shadow">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleFormSubmit();
-          }}
-          className="space-y-6 p-6"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card>
+        <form onSubmit={handleSubmit}>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+            <CardDescription>Update your presentation details</CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
             {/* Basic Information */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Basic Information</h2>
-
-              <div>
-                <label
-                  htmlFor="title"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Title *
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
-                    errors.title ? "border-destructive" : "border-input"
-                  }`}
-                />
-                {errors.title && (
-                  <p className="text-destructive text-sm mt-1">
-                    {errors.title}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="shortname"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Shortname *
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    id="shortname"
-                    name="shortname"
-                    value={formData.shortname}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    value={formData.title}
                     onChange={handleChange}
-                    className={`flex-1 px-4 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
-                      errors.shortname ? "border-destructive" : "border-input"
-                    }`}
-                    placeholder="e.g., my-presentation"
+                    className={errors.title ? "border-destructive" : ""}
                   />
-                  <Button
-                    type="button"
-                    onClick={callCheckShortname}
-                    disabled={!formData.shortname || isCheckingShortname}
-                    variant="outline"
-                  >
-                    {isCheckingShortname ? "Checking..." : "Check Availability"}
-                  </Button>
+                  {errors.title && (
+                    <p className="text-destructive text-sm">{errors.title}</p>
+                  )}
                 </div>
-                {errors.shortname && (
-                  <p className="text-destructive text-sm mt-1">
-                    {errors.shortname}
+
+                <div className="space-y-2">
+                  <Label htmlFor="shortname">Shortname *</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="shortname"
+                      name="shortname"
+                      value={formData.shortname}
+                      onChange={handleChange}
+                      className={errors.shortname ? "border-destructive" : ""}
+                      placeholder="e.g., my-presentation"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => void checkShortnameAvailability()}
+                      disabled={!formData.shortname || isCheckingShortname}
+                      variant="outline"
+                    >
+                      {isCheckingShortname ? "Checking..." : "Check"}
+                    </Button>
+                  </div>
+                  {errors.shortname && (
+                    <p className="text-destructive text-sm">
+                      {errors.shortname}
+                    </p>
+                  )}
+                  {!errors.shortname && shortnameStatus === "available" && (
+                    <p className="text-green-500 text-sm">Available!</p>
+                  )}
+                  {!errors.shortname && shortnameStatus === "taken" && (
+                    <p className="text-destructive text-sm">Already taken</p>
+                  )}
+                  <p className="text-muted-foreground text-sm">
+                    Only lowercase letters, numbers, and hyphens
                   </p>
-                )}
-                {!errors.shortname && (
-                  <>
-                    {shortnameStatus === "available" && (
-                      <p className="text-green-500 text-sm mt-1">
-                        This shortname is available!
-                      </p>
-                    )}
-                    {shortnameStatus === "taken" && (
-                      <p className="text-destructive text-sm mt-1">
-                        This shortname is already taken.
-                      </p>
-                    )}
-                  </>
-                )}
-                <p className="text-muted-foreground text-sm mt-1">
-                  Only change if you want to update the URL. Only lowercase
-                  letters, numbers, and hyphens.
-                </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="visibility">Visibility</Label>
+                  <Select
+                    value={formData.visibility}
+                    onValueChange={(value) =>
+                      handleSelectChange("visibility", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select visibility" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Public</SelectItem>
+                      <SelectItem value="private">Private</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="credits">Credits</Label>
+                  <Input
+                    id="credits"
+                    name="credits"
+                    value={formData.credits}
+                    onChange={handleChange}
+                    placeholder="e.g., John Doe"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              {/* Media */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Media</h2>
+                <FileContainer
+                  fileType="logo"
+                  presentationId={presentation.id}
+                  onSuccess={refetch}
                 />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="visibility"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Visibility
-                </label>
-                <select
-                  id="visibility"
-                  name="visibility"
-                  value={formData.visibility}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="credits"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Credits
-                </label>
-                <input
-                  type="text"
-                  id="credits"
-                  name="credits"
-                  value={formData.credits}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="e.g., John Doe or leave blank to use your username"
+                <FileContainer
+                  fileType="cover"
+                  presentationId={presentation.id}
+                  onSuccess={refetch}
                 />
               </div>
             </div>
 
-            {/* Media */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Media</h2>
-              <FilePreview fileType="logo" disabled />
-
-              <FilePreview fileType="cover" disabled />
-            </div>
-          </div>
-
-          {/* Resources */}
-          <div className="pt-6 border-t border-border">
-            <h2 className="text-xl font-semibold mb-4">Resources</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FilePreview fileType="presentation" disabled />
-
-              <FilePreview fileType="handout" disabled />
-
-              <FilePreview fileType="research" disabled />
-            </div>
-
-            {/* TODO: Implement the presentation password*/}
-            {/* {formData.presentationIsLocked && (
-              <div className="mt-4">
-                <label
-                  htmlFor="presentationPassword"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Presentation Password
-                </label>
-                <input
-                  type="text"
-                  id="presentationPassword"
-                  name="presentationPassword"
-                  value={formData.presentationPassword}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            {/* Resources */}
+            <div className="pt-6 border-t border-border">
+              <h2 className="text-xl font-semibold mb-4">Resources</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FileContainer
+                  fileType="presentation"
+                  presentationId={presentation.id}
+                  onSuccess={refetch}
                 />
-              </div>
-            )} */}
-          </div>
-
-          {/* Kahoot */}
-          <div className="pt-6 border-t border-border">
-            <h2 className="text-xl font-semibold mb-4">Interactive Quiz</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label
-                  htmlFor="kahootPin"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Kahoot PIN
-                </label>
-                <input
-                  type="text"
-                  id="kahootPin"
-                  name="kahootPin"
-                  value={formData.kahootPin}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="123456 or 'none' for loading"
+                <FileContainer
+                  fileType="handout"
+                  presentationId={presentation.id}
+                  onSuccess={refetch}
                 />
-                <p className="text-gray-500 text-sm mt-1">
-                  Enter &apos;none&apos; to show a loading animation
-                </p>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="kahootSelfHostUrl"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Kahoot Self-Host URL
-                </label>
-                <input
-                  type="text"
-                  id="kahootSelfHostUrl"
-                  name="kahootSelfHostUrl"
-                  value={formData.kahootId}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="https://kahoot.it/challenge/123456"
+                <FileContainer
+                  fileType="research"
+                  presentationId={presentation.id}
+                  onSuccess={refetch}
                 />
               </div>
             </div>
-          </div>
 
-          <div className="flex justify-end space-x-4 pt-6">
-            {/* TODO: Implement Deletion*/}
-            {/* <Button
-              type="button"
-              onClick={() => setShowDeleteConfirm(true)}
-              variant="destructive"
-            >
-              Delete Presentation
-            </Button> */}
-            <Button variant="outline" asChild>
-              <Link href="/manage">Cancel</Link>
-            </Button>
-            <Button type="submit">Save Changes</Button>
-          </div>
+            {/* Kahoot */}
+            <div className="pt-6 border-t border-border">
+              <h2 className="text-xl font-semibold mb-4">Interactive Quiz</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="kahootPin">Kahoot PIN</Label>
+                  <Input
+                    id="kahootPin"
+                    name="kahootPin"
+                    value={formData.kahootPin}
+                    onChange={handleChange}
+                    placeholder="123456 or 'none' for loading"
+                  />
+                  <p className="text-muted-foreground text-sm">
+                    Enter &apos;none&apos; to show a loading animation
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="kahootId">Kahoot Self-Host URL</Label>
+                  <Input
+                    id="kahootId"
+                    name="kahootId"
+                    value={formData.kahootId}
+                    onChange={handleChange}
+                    placeholder="https://kahoot.it/challenge/123456"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between space-x-4 pt-6 border-t border-border">
+              {/* Delete Presentation Button */}
+              <AlertDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+              >
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" type="button">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Presentation
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete
+                      the presentation &quot;{presentation.title}&quot; and all
+                      associated files.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {/* {deleteMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        "Delete"
+                      )} */}
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {/* Save/Cancel Buttons */}
+              <div className="flex gap-2 ml-auto">
+                <Button variant="outline" asChild>
+                  <Link href="/manage">Cancel</Link>
+                </Button>
+                <Button type="submit" disabled={editMutation.isPending}>
+                  {editMutation.isPending ? (
+                    <>
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
         </form>
-      </div>
-
-      {/* <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-          </DialogHeader>
-          <p className="text-muted-foreground">
-            Are you sure you want to delete this presentation? This action
-            cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteConfirm(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog> */}
+      </Card>
     </div>
   );
 }
