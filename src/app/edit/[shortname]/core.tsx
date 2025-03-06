@@ -17,16 +17,19 @@ import { z } from "zod";
 
 const uuidType = z.string().uuid();
 
-export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
+export function EditPage({ userId }: { userId: z.infer<typeof uuidType> }) {
   type InputData = inferRouterInputs<AppRouter>["presentations"]["create"];
   const router = useRouter();
 
+  // TODO: Create and use an Edit Mutation
   const creationMutation = api.presentations.create.useMutation({
     onSuccess(data, variables, context) {
       router.push(`/edit/${data[0]?.shortname}`);
     },
   });
 
+  // TODO: Remove "Owner" field from @/edit
+  // TODO: Remove "createdAt" from @/edit
   const onSubmit = (formData: InputData): void => {
     creationMutation.mutate({
       shortname: formData.shortname,
@@ -51,6 +54,8 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
     visibility: "public",
     credits: "",
   });
+
+  // TODO: Query presentations.getById (IMPORTANT: the shorname is editable so we need to only use the id)
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCheckingShortname, setIsCheckingShortname] = useState(false);
@@ -78,6 +83,7 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
     }
   };
 
+  // Handle form submission with loading state
   const handleFormSubmit = async () => {
     const block = await validateForm();
     if (!block) return;
@@ -98,6 +104,7 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
       });
     } catch (error) {
       throw new Error("Failed to create presentation: " + String(error));
+      // Handle submission error
     } finally {
       setIsSubmitting(false);
     }
@@ -156,10 +163,15 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Create New Presentation</h1>
+        {/** TODO: Edit {presentation.title} */}
+        <h1 className="text-3xl font-bold">Edit Presentation</h1>
         <Button variant="outline" asChild>
           <Link href="/manage">Back to Manage</Link>
         </Button>
+        {/* TODO: Implement the View Button */}
+        {/* <Button variant="secondary" asChild>
+            <Link href={`/?i=${shortname}`}>View</Link>
+          </Button> */}
       </div>
 
       <div className="bg-card text-card-foreground rounded-lg shadow">
@@ -247,7 +259,8 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
                   </>
                 )}
                 <p className="text-muted-foreground text-sm mt-1">
-                  Used in URLs. Only lowercase letters, numbers, and hyphens.
+                  Only change if you want to update the URL. Only lowercase
+                  letters, numbers, and hyphens.
                 </p>
               </div>
 
@@ -325,6 +338,26 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
 
               <FilePreview fileType="research" disabled />
             </div>
+
+            {/* TODO: Implement the presentation password*/}
+            {/* {formData.presentationIsLocked && (
+              <div className="mt-4">
+                <label
+                  htmlFor="presentationPassword"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Presentation Password
+                </label>
+                <input
+                  type="text"
+                  id="presentationPassword"
+                  name="presentationPassword"
+                  value={formData.presentationPassword}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            )} */}
           </div>
 
           {/* Kahoot */}
@@ -374,13 +407,44 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
           </div>
 
           <div className="flex justify-end space-x-4 pt-6">
+            {/* TODO: Implement Deletion*/}
+            {/* <Button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              variant="destructive"
+            >
+              Delete Presentation
+            </Button> */}
             <Button variant="outline" asChild>
               <Link href="/manage">Cancel</Link>
             </Button>
-            <Button type="submit">Create Presentation</Button>
+            <Button type="submit">Save Changes</Button>
           </div>
         </form>
       </div>
+
+      {/* <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground">
+            Are you sure you want to delete this presentation? This action
+            cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog> */}
     </div>
   );
 }

@@ -67,6 +67,10 @@ export const UploadthingRouter = {
       maxFileSize: "16MB",
       maxFileCount: 1,
     },
+    pdf: {
+      maxFileSize: "16MB",
+      maxFileCount: 1,
+    },
   })
     .input(
       z.object({

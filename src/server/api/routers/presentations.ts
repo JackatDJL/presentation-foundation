@@ -90,4 +90,8 @@ export const presentationRouter = createTRPCRouter({
 
     return presentation[0];
   }),
+
+  // TODO: write getById Query
+
+  // TODO: write Edit Presentation Mutation
 });
