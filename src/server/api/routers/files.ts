@@ -5,6 +5,7 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 import { db } from "~/server/db";
 import { files, presentations } from "~/server/db/schema";
+import { utapi } from "~/server/uploadthing";
 
 export const fileRouter = createTRPCRouter({
   create: publicProcedure
@@ -90,4 +91,51 @@ export const fileRouter = createTRPCRouter({
 
     return file[0];
   }),
+
+  deleteById: publicProcedure
+    .input(z.string().uuid())
+    .mutation(async ({ input }) => {
+      // Check if the file exists
+      const filles = await db.select().from(files).where(eq(files.id, input));
+      const file = filles[0];
+
+      if (!file) {
+        throw new Error("File not found");
+      }
+      // Get the presentationId and the filetype
+
+      // Delete the file from uploadthing
+      const deletionResponse = await utapi.deleteFiles(file.key);
+      if (!deletionResponse.success || deletionResponse.deletedCount !== 1) {
+        throw new Error("Failed to delete file");
+      }
+
+      // Update the presentation to remove the file
+
+      const dbPrResponse = await db
+        .update(presentations)
+        .set({
+          [file.fileType]: null,
+        })
+        .where(eq(presentations.id, file.presentationId))
+        .returning();
+
+      if (
+        dbPrResponse[0]?.[file.fileType] !== null ||
+        dbPrResponse.length !== 1
+      ) {
+        throw new Error("Failed to update presentation");
+      }
+
+      // Delete the file from the db
+      const dbFileResponse = await db
+        .delete(files)
+        .where(eq(files.id, input))
+        .returning();
+      if (dbFileResponse.length !== 1) {
+        throw new Error("Failed to delete file");
+      }
+
+      return;
+    }),
 });

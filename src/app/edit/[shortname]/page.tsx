@@ -12,9 +12,12 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { shortname } = await params;
-  // FIXME: Should be the title
+
+  const data = await api.presentations.getByShortname(shortname);
+  if (!data) return {};
+
   return {
-    title: `Edit ${shortname}`,
+    title: `Edit ${data.title} - Presentation Foundation by @DJL`,
   };
 }
 

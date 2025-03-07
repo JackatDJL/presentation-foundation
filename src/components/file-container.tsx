@@ -26,10 +26,13 @@ export default function FileContainer({
   onSuccess,
 }: FileContainerProps) {
   // Fetch the presentation to get the fileId
-  const { data: presentation, isLoading: loadingPresentation } =
-    api.presentations.getById.useQuery(presentationId, {
-      enabled: !disabled && Boolean(presentationId),
-    });
+  const {
+    data: presentation,
+    isLoading: loadingPresentation,
+    refetch,
+  } = api.presentations.getById.useQuery(presentationId, {
+    enabled: !disabled && Boolean(presentationId),
+  });
 
   // Get the fileId based on fileType
   const fileId = presentation && getFileIdByType(presentation, fileType);
@@ -42,19 +45,20 @@ export default function FileContainer({
     },
   );
 
-  // // Delete mutation
-  // const deleteMutation = api.files.deleteFile.useMutation({
-  //   onSuccess: () => {
-  //     if (onSuccess) onSuccess();
-  //   },
-  // });
+  // Delete mutation
+  const deleteMutation = api.files.deleteById.useMutation({
+    onSuccess: () => {
+      if (onSuccess) onSuccess();
+      void refetch();
+    },
+  });
 
-  // // Handle file deletion
-  // const handleDelete = () => {
-  //   if (fileId) {
-  //     deleteMutation.mutate({ fileId });
-  //   }
-  // };
+  // Handle file deletion
+  const handleDelete = async () => {
+    if (fileId) {
+      deleteMutation.mutate(fileId);
+    }
+  };
 
   // Loading state
   if ((loadingPresentation || loadingFile) && !disabled) {
@@ -69,6 +73,7 @@ export default function FileContainer({
         fileType={fileType}
         disabled={disabled}
         onSuccess={onSuccess}
+        refetch={refetch}
       />
     );
   }
@@ -86,17 +91,17 @@ export default function FileContainer({
             </Button>
           )}
           <Button
-            // onClick={handleDelete}
+            onClick={handleDelete}
+            type="button"
             size="sm"
             variant="destructive"
-            // disabled={deleteMutation.isLoading}
+            disabled={deleteMutation.isPending}
           >
-            {/* {deleteMutation.isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+            {deleteMutation.isPending ? (
+              <Loader className="h-4 w-4 animate-spin" />
             ) : (
               <Trash2 className="h-4 w-4" />
-            )} */}
-            <Trash2 className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -155,11 +160,13 @@ function UploadComponent({
   fileType,
   disabled = false,
   onSuccess,
+  refetch,
 }: {
   presentationId: string;
   fileType: FileType;
   disabled?: boolean;
   onSuccess?: () => void;
+  refetch: () => void;
 }) {
   if (disabled) {
     return (
@@ -177,6 +184,7 @@ function UploadComponent({
         fileType={fileType}
         presentationId={presentationId}
         onSuccess={onSuccess}
+        refetch={refetch}
       />
     </div>
   );
@@ -187,10 +195,12 @@ function UploadPreConfigured({
   fileType,
   presentationId,
   onSuccess,
+  refetch,
 }: {
   fileType: FileType;
   presentationId: string;
   onSuccess?: () => void;
+  refetch: () => void;
 }) {
   const endpoint:
     | "presentationUploader"
@@ -220,6 +230,7 @@ function UploadPreConfigured({
       input={input}
       onClientUploadComplete={() => {
         if (onSuccess) onSuccess();
+        void refetch();
       }}
       config={{
         mode: "auto",

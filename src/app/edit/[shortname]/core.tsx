@@ -39,6 +39,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const uuidType = z.string().uuid();
 
@@ -73,6 +74,7 @@ export function EditPage({ id }: { id: z.infer<typeof uuidType> }) {
 
 function PresentationForm({
   presentation,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   refetch,
 }: {
   presentation: typeof presentations.$inferSelect;
@@ -96,43 +98,28 @@ function PresentationForm({
   >(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  // TODO: Implement status Toasts
   const editMutation = api.presentations.edit.useMutation({
     onSuccess() {
-      // toast({
-      //   title: "Success",
-      //   description: "Presentation updated successfully",
-      // });
+      console.log("Success was Called!");
+      toast.success("Presentation updated successfully");
       router.push("/manage");
     },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onError(error) {
-      // toast({
-      //   title: "Error",
-      //   description: error.message || "Failed to update presentation",
-      //   variant: "destructive",
-      // });
+      toast.error(error.message || "Failed to update presentation");
     },
   });
 
   // TODO: Implement Deletion
 
-  // const deleteMutation = api.presentations.delete.useMutation({
-  //   onSuccess() {
-  //     toast({
-  //       title: "Success",
-  //       description: "Presentation deleted successfully",
-  //     });
-  //     router.push("/manage");
-  //   },
-  //   onError(error) {
-  //     toast({
-  //       title: "Error",
-  //       description: error.message || "Failed to delete presentation",
-  //       variant: "destructive",
-  //     });
-  //   },
-  // });
+  const deleteMutation = api.presentations.deleteById.useMutation({
+    onSuccess() {
+      toast.success("Presentation deleted successfully");
+      router.push("/manage");
+    },
+    onError(error) {
+      toast.error(error.message || "Failed to delete presentation");
+    },
+  });
 
   const { refetch: checkAvailability } =
     api.presentations.checkAvailability.useQuery(formData.shortname, {
@@ -243,7 +230,7 @@ function PresentationForm({
   };
 
   const handleDelete = () => {
-    // deleteMutation.mutate({ id: presentation.id });
+    deleteMutation.mutate(presentation.id);
     setIsDeleteDialogOpen(false);
   };
 
@@ -371,12 +358,10 @@ function PresentationForm({
                 <FileContainer
                   fileType="logo"
                   presentationId={presentation.id}
-                  onSuccess={refetch}
                 />
                 <FileContainer
                   fileType="cover"
                   presentationId={presentation.id}
-                  onSuccess={refetch}
                 />
               </div>
             </div>
@@ -388,17 +373,14 @@ function PresentationForm({
                 <FileContainer
                   fileType="presentation"
                   presentationId={presentation.id}
-                  onSuccess={refetch}
                 />
                 <FileContainer
                   fileType="handout"
                   presentationId={presentation.id}
-                  onSuccess={refetch}
                 />
                 <FileContainer
                   fileType="research"
                   presentationId={presentation.id}
-                  onSuccess={refetch}
                 />
               </div>
             </div>
@@ -460,15 +442,14 @@ function PresentationForm({
                       onClick={handleDelete}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      {/* {deleteMutation.isPending ? (
+                      {deleteMutation.isPending ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader className="mr-2 h-4 w-4 animate-spin" />
                           Deleting...
                         </>
                       ) : (
                         "Delete"
-                      )} */}
-                      Delete
+                      )}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -479,7 +460,11 @@ function PresentationForm({
                 <Button variant="outline" asChild>
                   <Link href="/manage">Cancel</Link>
                 </Button>
-                <Button type="submit" disabled={editMutation.isPending}>
+                <Button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={editMutation.isPending}
+                >
                   {editMutation.isPending ? (
                     <>
                       <Loader className="mr-2 h-4 w-4 animate-spin" />

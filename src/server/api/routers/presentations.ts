@@ -4,6 +4,7 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
+import { utapi } from "~/server/uploadthing";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { presentations, files } from "~/server/db/schema";
@@ -140,5 +141,86 @@ export const presentationRouter = createTRPCRouter({
 
       return presentation;
     }),
-  //TODO: Implement Deletion
+
+  deleteById: publicProcedure
+    .input(z.string().uuid())
+    .mutation(async ({ input }) => {
+      // console.log("Pulling data from database");
+      const presentation = await db
+        .select()
+        .from(presentations)
+        .where(eq(presentations.id, input));
+
+      // console.log("Data Pulled from database", presentation);
+      if (!presentation[0]) {
+        throw new Error("Presentation not found");
+      }
+      const keys = [
+        "logo",
+        "cover",
+        "presentation",
+        "handout",
+        "research",
+      ] as Array<keyof (typeof presentation)[0]>;
+      const presentationItem = presentation[0];
+      const filesArray = keys
+        .map((key) => presentationItem[key])
+        .filter((fileId): fileId is string => fileId !== null && fileId !== "");
+      // console.log("Files Array", filesArray);
+
+      for (const fileId of filesArray) {
+        if (!fileId) {
+          continue;
+        }
+        // console.log("Deleting File", fileId);
+        const filles = await db
+          .select()
+          .from(files)
+          .where(eq(files.id, fileId));
+
+        const file = filles[0];
+        // console.log("File Data", file);
+
+        if (!file) {
+          throw new Error("File not found");
+        }
+
+        const deletionResponse = await utapi.deleteFiles(file.key);
+        if (!deletionResponse.success || deletionResponse.deletedCount !== 1) {
+          throw new Error("Failed to delete file");
+        }
+        // console.log("Deleted", fileId, "from Uploadthing", deletionResponse);
+
+        const dbPrResponse = await db
+          .update(presentations)
+          .set({
+            [file.fileType]: null,
+          })
+          .where(eq(presentations.id, file.presentationId))
+          .returning();
+        // console.log("Updated Presentation", dbPrResponse);
+
+        if (
+          dbPrResponse[0]?.[file.fileType] !== null ||
+          dbPrResponse.length !== 1
+        ) {
+          throw new Error("Failed to update presentation");
+        }
+
+        const dbFileResponse = await db
+          .delete(files)
+          .where(eq(files.id, fileId))
+          .returning();
+        // console.log("Deleted File", fileId, "from Database", dbFileResponse);
+        if (!dbFileResponse[0]) {
+          throw new Error("Failed to delete file");
+        }
+        // console.log("Deleted File", fileId, "from Database", dbFileResponse);
+      }
+
+      await db.delete(presentations).where(eq(presentations.id, input));
+      // console.log("Deleted Presentation");
+
+      return;
+    }),
 });

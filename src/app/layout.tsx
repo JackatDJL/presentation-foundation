@@ -17,6 +17,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { extractRouterConfig } from "uploadthing/server";
 import { UploadthingRouter } from "./api/uploadthing/core";
+import { Toaster } from "~/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Presentation - Foundation - by DJL",
@@ -44,6 +45,7 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <Toaster />
               <div className="min-h-screen flex flex-col bg-background text-foreground">
                 <Header />
                 <main className="flex-grow">{children}</main>
