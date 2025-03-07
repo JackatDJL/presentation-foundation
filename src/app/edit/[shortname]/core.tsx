@@ -62,7 +62,9 @@ export function EditPage({ id }: { id: z.infer<typeof uuidType> }) {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Presentation not found</h1>
           <Button asChild>
-            <Link href="/manage">Back to Manage</Link>
+            <Link prefetch href="/manage">
+              Back to Manage
+            </Link>
           </Button>
         </div>
       </div>
@@ -237,11 +239,15 @@ function PresentationForm({
         <h1 className="text-3xl font-bold">Edit {presentation.title}</h1>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/manage">Back to Manage</Link>
+            <Link prefetch href="/manage">
+              Back to Manage
+            </Link>
           </Button>
           {presentation.shortname && (
             <Button variant="secondary" asChild>
-              <Link href={`/p/${presentation.shortname}`}>View</Link>
+              <Link prefetch href={`/p/${presentation.shortname}`}>
+                View
+              </Link>
             </Button>
           )}
         </div>
@@ -456,7 +462,9 @@ function PresentationForm({
               {/* Save/Cancel Buttons */}
               <div className="flex gap-2 ml-auto">
                 <Button variant="outline" asChild>
-                  <Link href="/manage">Cancel</Link>
+                  <Link prefetch href="/manage">
+                    Cancel
+                  </Link>
                 </Button>
                 <Button type="submit" disabled={editMutation.isPending}>
                   {editMutation.isPending ? (

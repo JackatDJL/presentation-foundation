@@ -1,24 +1,28 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import type { Presentation } from "~/lib/data"
-import KahootSection from "~/components/kahoot-section"
-import PasswordModal from "~/components/password-modal"
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import type { Presentation } from "~/lib/data";
+import KahootSection from "~/components/kahoot-section";
+import PasswordModal from "~/components/password-modal";
 
-export default function PresentationDetail({ presentation }: { presentation: Presentation }) {
-  const [showPasswordModal, setShowPasswordModal] = useState(false)
-  const [targetUrl, setTargetUrl] = useState("")
+export default function PresentationDetail({
+  presentation,
+}: {
+  presentation: Presentation;
+}) {
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [targetUrl, setTargetUrl] = useState("");
 
   const handlePresentationClick = () => {
     if (presentation.presentationFile?.isLocked) {
-      setTargetUrl(`/redirect/${presentation.shortname}/presentation`)
-      setShowPasswordModal(true)
+      setTargetUrl(`/redirect/${presentation.shortname}/presentation`);
+      setShowPasswordModal(true);
     } else if (presentation.presentationFile?.url) {
-      window.location.href = `/redirect/${presentation.shortname}/presentation`
+      window.location.href = `/redirect/${presentation.shortname}/presentation`;
     }
-  }
+  };
 
   return (
     <div className="min-h-screen">
@@ -37,6 +41,7 @@ export default function PresentationDetail({ presentation }: { presentation: Pre
 
         <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center text-white p-4">
           <Link
+            prefetch
             href="/"
             className="absolute top-4 left-4 bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-md transition-colors"
           >
@@ -54,7 +59,9 @@ export default function PresentationDetail({ presentation }: { presentation: Pre
             </div>
           )}
 
-          <h1 className="text-4xl md:text-5xl font-bold text-center">{presentation.title}</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-center">
+            {presentation.title}
+          </h1>
         </div>
       </div>
 
@@ -102,7 +109,14 @@ export default function PresentationDetail({ presentation }: { presentation: Pre
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <rect
+                      x="3"
+                      y="11"
+                      width="18"
+                      height="11"
+                      rx="2"
+                      ry="2"
+                    ></rect>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                   </svg>
                 )}
@@ -111,6 +125,7 @@ export default function PresentationDetail({ presentation }: { presentation: Pre
 
             {presentation.handoutFile?.url && (
               <Link
+                prefetch
                 href={`/redirect/${presentation.shortname}/handout`}
                 className="flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors"
               >
@@ -137,6 +152,7 @@ export default function PresentationDetail({ presentation }: { presentation: Pre
             {presentation.researchFile?.url && (
               <Link
                 href={`/redirect/${presentation.shortname}/research`}
+                prefetch
                 className="flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-md hover:bg-purple-700 transition-colors"
               >
                 <svg
@@ -162,14 +178,19 @@ export default function PresentationDetail({ presentation }: { presentation: Pre
         {(presentation.kahootPin || presentation.kahootSelfHostUrl) && (
           <div className="mb-12 max-w-3xl mx-auto">
             <h2 className="text-2xl font-semibold mb-6">Interactive Quiz</h2>
-            <KahootSection kahootPin={presentation.kahootPin} kahootSelfHostUrl={presentation.kahootSelfHostUrl} />
+            <KahootSection
+              kahootPin={presentation.kahootPin}
+              kahootSelfHostUrl={presentation.kahootSelfHostUrl}
+            />
           </div>
         )}
 
         {/* Credits */}
         {presentation.credits && (
           <div className="mt-12 max-w-3xl mx-auto pt-6 border-t border-border">
-            <p className="text-muted-foreground text-center">Credits: {presentation.credits}</p>
+            <p className="text-muted-foreground text-center">
+              Credits: {presentation.credits}
+            </p>
           </div>
         )}
       </div>
@@ -180,11 +201,10 @@ export default function PresentationDetail({ presentation }: { presentation: Pre
           correctPassword={presentation.presentationFile?.password || ""}
           onClose={() => setShowPasswordModal(false)}
           onSuccess={() => {
-            window.location.href = targetUrl
+            window.location.href = targetUrl;
           }}
         />
       )}
     </div>
-  )
+  );
 }
-

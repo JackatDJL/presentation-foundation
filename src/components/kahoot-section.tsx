@@ -40,6 +40,7 @@ export default function KahootSection({
   if (kahootPin && !kahootSelfHostUrl) {
     return (
       <Link
+        prefetch
         href={`https://kahoot.it/?pin=${kahootPin}`}
         target="_blank"
         rel="noopener noreferrer"
@@ -80,6 +81,7 @@ export default function KahootSection({
   if (!kahootPin && kahootSelfHostUrl) {
     return (
       <Link
+        prefetch
         href={kahootSelfHostUrl}
         target="_blank"
         rel="noopener noreferrer"
@@ -122,6 +124,7 @@ export default function KahootSection({
       <Tooltip>
         <TooltipTrigger asChild>
           <Link
+            prefetch
             href={`https://kahoot.it/?pin=${kahootPin}`}
             target="_blank"
             rel="noopener noreferrer"
@@ -158,6 +161,7 @@ export default function KahootSection({
         </TooltipTrigger>
         <TooltipContent>
           <Link
+            prefetch
             href={kahootSelfHostUrl || "#"}
             target="_blank"
             rel="noopener noreferrer"

@@ -8,7 +8,7 @@ export default function Header() {
     <header className="bg-background border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link href="/" className="flex items-center space-x-3">
+          <Link prefetch href="/" className="flex items-center space-x-3">
             <div className="relative w-10 h-10">
               <Image
                 src="/placeholder.svg?height=40&width=40"
@@ -26,6 +26,7 @@ export default function Header() {
         <div className="flex items-center space-x-4">
           <ThemeToggle />
           <Link
+            prefetch
             href="/manage"
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
           >

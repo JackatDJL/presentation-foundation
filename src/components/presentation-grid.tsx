@@ -1,12 +1,21 @@
-import Link from "next/link"
-import Image from "next/image"
-import type { Presentation } from "~/lib/data"
+import Link from "next/link";
+import Image from "next/image";
+import type { Presentation } from "~/lib/data";
 
-export default function PresentationGrid({ presentations }: { presentations: Presentation[] }) {
+export default function PresentationGrid({
+  presentations,
+}: {
+  presentations: Presentation[];
+}) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {presentations.map((presentation) => (
-        <Link key={presentation.id} href={`/?i=${presentation.shortname}`} className="group block">
+        <Link
+          prefetch
+          key={presentation.id}
+          href={`/?i=${presentation.shortname}`}
+          className="group block"
+        >
           <div className="bg-gray-800 rounded-lg overflow-hidden transition-transform duration-300 group-hover:-translate-y-1 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
             <div className="relative h-48 w-full bg-gray-700">
               {presentation.cover ? (
@@ -35,17 +44,20 @@ export default function PresentationGrid({ presentations }: { presentations: Pre
                     />
                   </div>
                 )}
-                <h2 className="text-xl font-semibold text-white">{presentation.title}</h2>
+                <h2 className="text-xl font-semibold text-white">
+                  {presentation.title}
+                </h2>
               </div>
 
               {presentation.description && (
-                <p className="text-gray-300 line-clamp-2 mb-4">{presentation.description}</p>
+                <p className="text-gray-300 line-clamp-2 mb-4">
+                  {presentation.description}
+                </p>
               )}
             </div>
           </div>
         </Link>
       ))}
     </div>
-  )
+  );
 }
-

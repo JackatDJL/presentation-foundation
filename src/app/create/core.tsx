@@ -189,7 +189,9 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Create New Presentation</h1>
         <Button variant="outline" asChild>
-          <Link href="/manage">Back to Manage</Link>
+          <Link prefetch href="/manage">
+            Back to Manage
+          </Link>
         </Button>
       </div>
 
@@ -356,7 +358,9 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
 
             <div className="flex justify-end space-x-4 pt-6 border-t border-border">
               <Button variant="outline" asChild>
-                <Link href="/manage">Cancel</Link>
+                <Link prefetch href="/manage">
+                  Cancel
+                </Link>
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
