@@ -13,7 +13,7 @@ import type { files, presentations } from "~/server/db/schema";
 type FileType = "presentation" | "handout" | "research" | "logo" | "cover";
 
 interface FileContainerProps {
-  presentationId: string;
+  presentationId?: string;
   fileType: FileType;
   disabled?: boolean;
   onSuccess?: () => void;
@@ -25,6 +25,9 @@ export default function FileContainer({
   disabled = false,
   onSuccess,
 }: FileContainerProps) {
+  if (!presentationId) {
+    return <CreateFirst />;
+  }
   // Fetch the presentation to get the fileId
   const {
     data: presentation,
@@ -169,13 +172,7 @@ function UploadComponent({
   refetch: () => void;
 }) {
   if (disabled) {
-    return (
-      <div className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center">
-        <div className="text-muted-foreground mb-2">
-          Create a presentation first
-        </div>
-      </div>
-    );
+    return <CreateFirst />;
   }
 
   return (
@@ -186,6 +183,16 @@ function UploadComponent({
         onSuccess={onSuccess}
         refetch={refetch}
       />
+    </div>
+  );
+}
+
+function CreateFirst() {
+  return (
+    <div className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center">
+      <div className="text-muted-foreground mb-2">
+        Create a presentation first
+      </div>
     </div>
   );
 }

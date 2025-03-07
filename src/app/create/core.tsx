@@ -11,9 +11,28 @@ import type { inferRouterInputs } from "@trpc/server";
 import type { AppRouter } from "~/server/api/root";
 
 import { useState } from "react";
-import FilePreview from "~/components/file-container";
+import FileContainer from "~/components/file-container";
 import { api } from "~/trpc/react";
 import { z } from "zod";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "~/components/ui/card";
+import { Label } from "~/components/ui/label";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Loader } from "lucide-react";
+import { toast } from "sonner";
 
 const uuidType = z.string().uuid();
 
@@ -23,7 +42,11 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
 
   const creationMutation = api.presentations.create.useMutation({
     onSuccess(data, variables, context) {
+      toast.success("Presentation created successfully");
       router.push(`/edit/${data[0]?.shortname}`);
+    },
+    onError(error) {
+      toast.error(error.message || "Failed to create presentation");
     },
   });
 
@@ -126,6 +149,19 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
     }
   };
 
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
   const validateForm = async () => {
     const newErrors: Record<string, string> = {};
 
@@ -142,14 +178,9 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
         "Shortname can only contain lowercase letters, numbers, and hyphens";
     }
 
-    // console.log(newErrors);
-    setErrors({});
     setErrors(newErrors);
-    // console.log(Object.keys(errors).length);
-    // console.log(availabilityData);
-    const allowCreation = Object.keys(errors).length === 0 && availabilityData;
-    // console.log(errors, newErrors);
-    // console.log(allowCreation);
+    const allowCreation =
+      Object.keys(newErrors).length === 0 && availabilityData;
     return allowCreation;
   };
 
@@ -162,225 +193,185 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
         </Button>
       </div>
 
-      <div className="bg-card text-card-foreground rounded-lg shadow">
+      <Card>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void handleFormSubmit();
           }}
-          className="space-y-6 p-6"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+            <CardDescription>Enter your presentation details</CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
             {/* Basic Information */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Basic Information</h2>
-
-              <div>
-                <label
-                  htmlFor="title"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Title *
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
-                    errors.title ? "border-destructive" : "border-input"
-                  }`}
-                />
-                {errors.title && (
-                  <p className="text-destructive text-sm mt-1">
-                    {errors.title}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="shortname"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Shortname *
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    id="shortname"
-                    name="shortname"
-                    value={formData.shortname}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    value={formData.title}
                     onChange={handleChange}
-                    className={`flex-1 px-4 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
-                      errors.shortname ? "border-destructive" : "border-input"
-                    }`}
-                    placeholder="e.g., my-presentation"
+                    className={errors.title ? "border-destructive" : ""}
                   />
-                  <Button
-                    type="button"
-                    onClick={callCheckShortname}
-                    disabled={!formData.shortname || isCheckingShortname}
-                    variant="outline"
-                  >
-                    {isCheckingShortname ? "Checking..." : "Check Availability"}
-                  </Button>
+                  {errors.title && (
+                    <p className="text-destructive text-sm">{errors.title}</p>
+                  )}
                 </div>
-                {errors.shortname && (
-                  <p className="text-destructive text-sm mt-1">
-                    {errors.shortname}
+
+                <div className="space-y-2">
+                  <Label htmlFor="shortname">Shortname *</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="shortname"
+                      name="shortname"
+                      value={formData.shortname}
+                      onChange={handleChange}
+                      className={errors.shortname ? "border-destructive" : ""}
+                      placeholder="e.g., my-presentation"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => void callCheckShortname()}
+                      disabled={!formData.shortname || isCheckingShortname}
+                      variant="outline"
+                    >
+                      {isCheckingShortname ? "Checking..." : "Check"}
+                    </Button>
+                  </div>
+                  {errors.shortname && (
+                    <p className="text-destructive text-sm">
+                      {errors.shortname}
+                    </p>
+                  )}
+                  {!errors.shortname && (
+                    <>
+                      {shortnameStatus === "available" && (
+                        <p className="text-green-500 text-sm">Available!</p>
+                      )}
+                      {shortnameStatus === "taken" && (
+                        <p className="text-destructive text-sm">
+                          Already taken
+                        </p>
+                      )}
+                    </>
+                  )}
+                  <p className="text-muted-foreground text-sm">
+                    Only lowercase letters, numbers, and hyphens
                   </p>
-                )}
-                {!errors.shortname && (
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="visibility">Visibility</Label>
+                  <Select
+                    value={formData.visibility}
+                    onValueChange={(value) =>
+                      handleSelectChange("visibility", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select visibility" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Public</SelectItem>
+                      <SelectItem value="private">Private</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="credits">Credits</Label>
+                  <Input
+                    id="credits"
+                    name="credits"
+                    value={formData.credits}
+                    onChange={handleChange}
+                    placeholder="e.g., John Doe or leave blank to use your username"
+                  />
+                </div>
+              </div>
+
+              {/* Media */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Media</h2>
+                <FileContainer fileType="logo" disabled />
+                <FileContainer fileType="cover" disabled />
+              </div>
+            </div>
+
+            {/* Resources */}
+            <div className="pt-6 border-t border-border">
+              <h2 className="text-xl font-semibold mb-4">Resources</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FileContainer fileType="presentation" disabled />
+                <FileContainer fileType="handout" disabled />
+                <FileContainer fileType="research" disabled />
+              </div>
+            </div>
+
+            {/* Kahoot */}
+            <div className="pt-6 border-t border-border">
+              <h2 className="text-xl font-semibold mb-4">Interactive Quiz</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="kahootPin">Kahoot PIN</Label>
+                  <Input
+                    id="kahootPin"
+                    name="kahootPin"
+                    value={formData.kahootPin}
+                    onChange={handleChange}
+                    placeholder="123456 or 'none' for loading"
+                  />
+                  <p className="text-muted-foreground text-sm">
+                    Enter &apos;none&apos; to show a loading animation
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="kahootId">Kahoot Self-Host URL</Label>
+                  <Input
+                    id="kahootId"
+                    name="kahootId"
+                    value={formData.kahootId}
+                    onChange={handleChange}
+                    placeholder="https://kahoot.it/challenge/123456"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-4 pt-6 border-t border-border">
+              <Button variant="outline" asChild>
+                <Link href="/manage">Cancel</Link>
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
                   <>
-                    {shortnameStatus === "available" && (
-                      <p className="text-green-500 text-sm mt-1">
-                        This shortname is available!
-                      </p>
-                    )}
-                    {shortnameStatus === "taken" && (
-                      <p className="text-destructive text-sm mt-1">
-                        This shortname is already taken.
-                      </p>
-                    )}
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
                   </>
+                ) : (
+                  "Create Presentation"
                 )}
-                <p className="text-muted-foreground text-sm mt-1">
-                  Used in URLs. Only lowercase letters, numbers, and hyphens.
-                </p>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="visibility"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Visibility
-                </label>
-                <select
-                  id="visibility"
-                  name="visibility"
-                  value={formData.visibility}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="credits"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Credits
-                </label>
-                <input
-                  type="text"
-                  id="credits"
-                  name="credits"
-                  value={formData.credits}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="e.g., John Doe or leave blank to use your username"
-                />
-              </div>
+              </Button>
             </div>
-
-            {/* Media */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Media</h2>
-              <FilePreview fileType="logo" disabled />
-
-              <FilePreview fileType="cover" disabled />
-            </div>
-          </div>
-
-          {/* Resources */}
-          <div className="pt-6 border-t border-border">
-            <h2 className="text-xl font-semibold mb-4">Resources</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FilePreview fileType="presentation" disabled />
-
-              <FilePreview fileType="handout" disabled />
-
-              <FilePreview fileType="research" disabled />
-            </div>
-          </div>
-
-          {/* Kahoot */}
-          <div className="pt-6 border-t border-border">
-            <h2 className="text-xl font-semibold mb-4">Interactive Quiz</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label
-                  htmlFor="kahootPin"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Kahoot PIN
-                </label>
-                <input
-                  type="text"
-                  id="kahootPin"
-                  name="kahootPin"
-                  value={formData.kahootPin}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="123456 or 'none' for loading"
-                />
-                <p className="text-gray-500 text-sm mt-1">
-                  Enter &apos;none&apos; to show a loading animation
-                </p>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="kahootSelfHostUrl"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Kahoot Self-Host URL
-                </label>
-                <input
-                  type="text"
-                  id="kahootSelfHostUrl"
-                  name="kahootSelfHostUrl"
-                  value={formData.kahootId}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="https://kahoot.it/challenge/123456"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-4 pt-6">
-            <Button variant="outline" asChild>
-              <Link href="/manage">Cancel</Link>
-            </Button>
-            <Button type="submit">Create Presentation</Button>
-          </div>
+          </CardContent>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }
