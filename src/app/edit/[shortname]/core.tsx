@@ -109,8 +109,6 @@ function PresentationForm({
     },
   });
 
-  // TODO: Implement Deletion
-
   const deleteMutation = api.presentations.deleteById.useMutation({
     onSuccess() {
       toast.success("Presentation deleted successfully");
@@ -231,7 +229,6 @@ function PresentationForm({
 
   const handleDelete = () => {
     deleteMutation.mutate(presentation.id);
-    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -440,6 +437,7 @@ function PresentationForm({
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDelete}
+                      type="button"
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                       {deleteMutation.isPending ? (
@@ -460,11 +458,7 @@ function PresentationForm({
                 <Button variant="outline" asChild>
                   <Link href="/manage">Cancel</Link>
                 </Button>
-                <Button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={editMutation.isPending}
-                >
+                <Button type="submit" disabled={editMutation.isPending}>
                   {editMutation.isPending ? (
                     <>
                       <Loader className="mr-2 h-4 w-4 animate-spin" />

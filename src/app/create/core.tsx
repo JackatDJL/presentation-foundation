@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Loader } from "lucide-react";
+import { Loader } from "react-feather";
 import { toast } from "sonner";
 
 const uuidType = z.string().uuid();
