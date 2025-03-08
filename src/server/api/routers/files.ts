@@ -6,6 +6,8 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { files, presentations } from "~/server/db/schema";
 import { utapi } from "~/server/uploadthing";
+import * as argon2 from "argon2";
+import crypto from "crypto";
 
 export const fileRouter = createTRPCRouter({
   create: publicProcedure
@@ -137,5 +139,163 @@ export const fileRouter = createTRPCRouter({
       }
 
       return;
+    }),
+  // toggle locked with password
+  editLock: publicProcedure
+    .input(
+      z.object({
+        fileId: z.string().uuid(),
+        procedure: z.enum(["lock", "unlock", "changePassword"]),
+        oldPassword: z.string().optional(),
+        newPassword: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const tfile = await db
+        .select()
+        .from(files)
+        .where(eq(files.id, input.fileId));
+
+      const file = tfile[0];
+
+      if (!file) {
+        return {
+          success: false,
+          code: "ex.404.file",
+          message: "File not found",
+        };
+      }
+
+      if (file.fileType !== "presentation") {
+        return {
+          success: false,
+          code: "ex.400.file",
+          message: "Filetype is not a presentation",
+        };
+      }
+
+      if (
+        (input.procedure === "changePassword" &&
+          (!file.password || !input.oldPassword || !input.newPassword)) ||
+        (input.procedure === "lock" && (file.password || !input.newPassword)) ||
+        (input.procedure === "unlock" && (!file.password || !input.oldPassword))
+      ) {
+        return {
+          success: false,
+          code: "ex.400.type",
+          message: "Invalid operation for the current input",
+        };
+      }
+
+      switch (input.procedure) {
+        case "changePassword": {
+          if (!file.password) {
+            throw new Error("Error unreachable");
+          }
+          if (!input.oldPassword) {
+            return {
+              success: false,
+              code: "ex.400.password",
+              message: "Old password is required",
+            };
+          }
+
+          const hashedPassword = crypto
+            .createHash("sha256")
+            .update(input.oldPassword)
+            .digest("hex");
+
+          const match = await argon2.verify(file.password, hashedPassword);
+          if (!match) {
+            return {
+              success: false,
+              code: "ex.401.password",
+              message: "Incorrect password",
+            };
+          }
+
+          const response = await db
+            .update(files)
+            .set({
+              password: input.newPassword
+                ? await argon2.hash(input.newPassword)
+                : null,
+              updatedAt: new Date(),
+            })
+            .where(eq(files.id, input.fileId));
+
+          return {
+            success: true,
+            code: "sc.200.success",
+            response: response,
+            message: "Password changed",
+          };
+        }
+        case "lock": {
+          if (file.password || !input.newPassword) {
+            throw new Error("Error unreachable");
+          }
+
+          const prehash = crypto
+            .createHash("sha256")
+            .update(input.newPassword)
+            .digest("hex");
+
+          const hash = await argon2.hash(prehash);
+
+          const response = await db
+            .update(files)
+            .set({
+              isLocked: true,
+              password: hash,
+              updatedAt: new Date(),
+            })
+            .where(eq(files.id, input.fileId));
+
+          return {
+            success: true,
+            code: "sc.200.success",
+            response: response,
+            message: "File locked",
+          };
+        }
+        case "unlock": {
+          if (!file.password || !input.oldPassword) {
+            throw new Error("Error unreachable");
+          }
+
+          const prehash = crypto
+            .createHash("sha256")
+            .update(input.oldPassword)
+            .digest("hex");
+
+          const match = await argon2.verify(file.password, prehash);
+          if (!match) {
+            return {
+              success: false,
+              code: "ex.401.password",
+              message: "Incorrect password",
+            };
+          }
+
+          const response = await db
+            .update(files)
+            .set({
+              isLocked: false,
+              password: null,
+              updatedAt: new Date(),
+            })
+            .where(eq(files.id, input.fileId));
+
+          return {
+            success: true,
+            code: "sc.200.success",
+            response: response,
+            message: "File unlocked",
+          };
+        }
+        default:
+          throw new Error("Error Unreachable");
+      }
     }),
 });

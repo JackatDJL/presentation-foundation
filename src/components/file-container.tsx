@@ -88,7 +88,7 @@ export default function FileContainer({
         <h3 className="font-medium">{getTitle(fileType)}</h3>
         <div className="flex space-x-2">
           {fileType === "presentation" && (
-            <Button size="sm" variant="outline">
+            <Button type="button" size="sm" variant="outline">
               <Lock className="h-4 w-4 mr-1" />
               Unlocked
             </Button>
