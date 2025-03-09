@@ -17,8 +17,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import KahootSection from "~/components/kahoot-section";
 import FileView from "./file-view";
-import Link from "next/link";
-import { getHomeHref } from "./shortname-routing";
+import { AsyncHomeLink } from "./asyncLink";
 
 interface ViewPresentationProps {
   shortname: string;
@@ -75,7 +74,9 @@ export default function ViewPresentation({ shortname }: ViewPresentationProps) {
           </CardHeader>
           <CardFooter>
             <Button asChild>
-              <Link href={getHomeHref(searchParamsObj)}>Return Home</Link>
+              <AsyncHomeLink searchParams={searchParamsObj}>
+                Return Home
+              </AsyncHomeLink>
             </Button>
           </CardFooter>
         </Card>
@@ -187,7 +188,9 @@ export default function ViewPresentation({ shortname }: ViewPresentationProps) {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link href={getHomeHref(searchParamsObj)}>Back to Home</Link>
+                <AsyncHomeLink searchParams={searchParamsObj}>
+                  Return Home
+                </AsyncHomeLink>
               </Button>
             </div>
           </CardFooter>

@@ -2,8 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { Button } from "./ui/button";
 
 export default function Header() {
+  const userButtonAppearance = {
+    elements: {
+      userButtonAvatarBox: "w-10 h-10",
+    },
+  };
+
   return (
     <header className="bg-background border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -25,21 +32,23 @@ export default function Header() {
 
         <div className="flex items-center space-x-4">
           <ThemeToggle />
-          <Link
-            prefetch
-            href="/manage"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-          >
-            Manage
-          </Link>
+          <SignedIn>
+            <Button asChild>
+              <Link prefetch href="/manage">
+                Manage
+              </Link>
+            </Button>
+          </SignedIn>
 
           {/* Placeholder for Clerk authentication */}
-          <div className="relative h-8">
+          <div className="relative h-10">
             <SignedIn>
-              <UserButton />
+              <UserButton showName appearance={userButtonAppearance} />
             </SignedIn>
             <SignedOut>
-              <SignInButton />
+              <Button className="flex items-center h-10 space-x-4" asChild>
+                <SignInButton />
+              </Button>
             </SignedOut>
           </div>
         </div>

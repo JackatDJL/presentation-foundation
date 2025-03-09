@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { useState } from "react";
@@ -39,6 +39,8 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { type SearchParams } from "~/components/shortname-routing";
+import { AsyncViewLink } from "~/components/asyncLink";
 
 const uuidType = z.string().uuid();
 
@@ -46,6 +48,8 @@ export function EditPage({ id }: { id: z.infer<typeof uuidType> }) {
   uuidType.parse(id);
 
   const { data, isLoading, refetch } = api.presentations.getById.useQuery(id);
+
+  const searchParams = useSearchParams();
 
   if (isLoading) {
     return (
@@ -70,16 +74,24 @@ export function EditPage({ id }: { id: z.infer<typeof uuidType> }) {
     );
   }
 
-  return <PresentationForm presentation={data} refetch={refetch} />;
+  return (
+    <PresentationForm
+      presentation={data}
+      refetch={refetch}
+      searchParams={Object.fromEntries(searchParams.entries())}
+    />
+  );
 }
 
 function PresentationForm({
   presentation,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   refetch,
+  searchParams,
 }: {
   presentation: typeof presentations.$inferSelect;
   refetch: () => void;
+  searchParams: SearchParams;
 }) {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -244,9 +256,12 @@ function PresentationForm({
           </Button>
           {presentation.shortname && (
             <Button variant="secondary" asChild>
-              <Link prefetch href={`/p/${presentation.shortname}`}>
+              <AsyncViewLink
+                searchParams={searchParams}
+                shortname={presentation.shortname}
+              >
                 View
-              </Link>
+              </AsyncViewLink>
             </Button>
           )}
         </div>

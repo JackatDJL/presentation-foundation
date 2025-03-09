@@ -18,6 +18,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { extractRouterConfig } from "uploadthing/server";
 import { UploadthingRouter } from "./api/uploadthing/core";
 import { Toaster } from "~/components/ui/sonner";
+import { dark } from "@clerk/themes";
 
 export const metadata: Metadata = {
   title: "Presentation - Foundation - by DJL",
@@ -30,7 +31,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        baseTheme: dark,
+      }}
+    >
       <html lang="en" className={`${GeistSans.variable}`}>
         <body>
           <Analytics />

@@ -1,6 +1,8 @@
-"use client";
+"use server";
 
-interface SearchParams {
+import { headers } from "next/headers";
+
+export interface SearchParams {
   dev?: string;
   shortname?: string;
   [key: string]: string | string[] | undefined;
@@ -9,7 +11,7 @@ interface SearchParams {
 /**
  * Determines if the current environment is in development mode
  */
-export function isDevMode(searchParams: SearchParams): boolean {
+export async function isDevMode(searchParams: SearchParams): Promise<boolean> {
   return process.env.NODE_ENV === "development" || searchParams.dev === "true";
 }
 
@@ -23,6 +25,13 @@ export async function handleShortnameRouting(
   searchParams: SearchParams,
   currentPath: string,
 ): Promise<{ redirectUrl: string | null; shouldRedirect: boolean }> {
+  const headerList = await headers();
+  const headersObject: Record<string, string> = {};
+
+  headerList.forEach((value: string, key: string) => {
+    headersObject[key] = value;
+  });
+
   const shortname = searchParams.shortname;
 
   // If no shortname, no need to redirect
@@ -35,12 +44,12 @@ export async function handleShortnameRouting(
     return { redirectUrl: null, shouldRedirect: false };
   }
 
-  const isDev = isDevMode(searchParams);
+  const isDev = await isDevMode(searchParams);
 
   if (isDev) {
     // In dev mode, we keep the shortname as a query parameter
     // but redirect to the root path
-    const url = new URL(window.location.origin);
+    const url = new URL(`https://${headersObject.host}`);
     url.searchParams.set("shortname", shortname);
     if (searchParams.dev === "true") {
       url.searchParams.set("dev", "true");
@@ -62,22 +71,34 @@ export async function handleShortnameRouting(
  * @param shortname The shortname of the presentation
  * @returns The URL to view the presentation
  */
-export function getViewHref(
+export async function getViewHref(
   searchParams: SearchParams,
   shortname: string,
-): string {
-  const isDev = isDevMode(searchParams);
+): Promise<string> {
+  // Abrufen des Host-Headers
+  const headerList = await headers();
+  const headersObject: Record<string, string> = {};
+
+  headerList.forEach((value: string, key: string) => {
+    headersObject[key] = value;
+  });
+  const host = headersObject.host ?? "";
+  const isDev = await isDevMode(searchParams);
 
   if (isDev) {
-    // In dev mode, use query parameters
-    const url = new URL("/", window.location.origin);
+    // In dev mode, verwende window.location.origin, da ein Query-Parameter angehängt wird
+    const protocol =
+      host.includes("localhost") || host.includes("127.0.0.1")
+        ? "http"
+        : "https";
+    const url = new URL("/", `${protocol}://${host}`);
     url.searchParams.set("shortname", shortname);
     if (searchParams.dev === "true") {
       url.searchParams.set("dev", "true");
     }
     return url.toString();
   } else {
-    // In production, use subdomains
+    // In production, verwende das Subdomain-Format
     return `https://${shortname}.pr.djl.foundation/`;
   }
 }
@@ -87,12 +108,22 @@ export function getViewHref(
  * @param searchParams The current search parameters
  * @returns The URL for the home page
  */
-export function getHomeHref(searchParams: SearchParams): string {
-  const isDev = isDevMode(searchParams);
+export async function getHomeHref(searchParams: SearchParams): Promise<string> {
+  const isDev = await isDevMode(searchParams);
+  const headerList = await headers();
+  const headersObject: Record<string, string> = {};
+
+  headerList.forEach((value: string, key: string) => {
+    headersObject[key] = value;
+  });
+  const host = headersObject.host ?? "pr.djl.foundation";
 
   if (isDev) {
-    // In dev mode, go to home but keep dev=true if it exists
-    const url = new URL("/", window.location.origin);
+    const protocol =
+      host.includes("localhost") || host.includes("127.0.0.1")
+        ? "http"
+        : "https";
+    const url = new URL("/", `${protocol}://${host}`);
     if (searchParams.dev === "true") {
       url.searchParams.set("dev", "true");
     }
