@@ -11,7 +11,7 @@ export default function Header() {
           <Link prefetch href="/" className="flex items-center space-x-3">
             <div className="relative w-10 h-10">
               <Image
-                src="/placeholder.svg?height=40&width=40"
+                src="/logo.png"
                 alt="Presentation Foundation Logo"
                 fill
                 className="object-contain"

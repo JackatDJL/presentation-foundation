@@ -78,8 +78,6 @@ export const UploadthingRouter = {
       }),
     )
     .middleware(async ({ req, input }) => {
-      // console.log("Running Middleware for ", input.presentationId);
-      clerkMiddleware();
       const Auth = auth();
       // console.log("Auth: ", Auth);
       if (!(await Auth).userId) throw new UploadThingError("Unauthorized");
@@ -127,8 +125,6 @@ export const UploadthingRouter = {
       }),
     )
     .middleware(async ({ req, input }) => {
-      // console.log("Running Middleware for ", input.presentationId);
-      clerkMiddleware();
       const Auth = auth();
       // console.log("Auth: ", Auth);
       if (!(await Auth).userId) throw new UploadThingError("Unauthorized");
@@ -186,8 +182,6 @@ export const UploadthingRouter = {
       }),
     )
     .middleware(async ({ req, input }) => {
-      // console.log("Running Middleware for ", input.presentationId);
-      clerkMiddleware();
       const Auth = auth();
       // console.log("Auth: ", Auth);
       if (!(await Auth).userId) throw new UploadThingError("Unauthorized");

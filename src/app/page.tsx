@@ -14,16 +14,24 @@ interface SearchParams {
 async function getShortname(
   searchParams: SearchParams,
 ): Promise<string | null> {
+  if (typeof window !== "undefined") console.log(window);
+  console.log("Search Params:", searchParams);
+
   const currentUrl =
     typeof window !== "undefined" ? window.location.hostname : "";
+  console.log("Current URL:", currentUrl);
 
   if (env.NODE_ENV === "development" || searchParams.dev === "true") {
+    console.log("Development mode");
     return searchParams.shortname ?? null;
   } else if (!currentUrl.endsWith(".pr.djl.foundation")) {
+    console.log("Not a subdomain");
     return null;
   } else {
+    console.log("Subdomain mode");
     // Extract the subdomain from the URL
     const subdomain = currentUrl.split(".")[0];
+    console.log("Subdomain:", subdomain);
     return subdomain ?? null;
   }
 }
@@ -60,13 +68,17 @@ export default async function Page(props: {
   searchParams: Promise<SearchParams>;
 }) {
   const searchParams = await props.searchParams;
+  console.log("Search Params:", searchParams);
+
   const shortname = await getShortname(searchParams);
   if (!shortname) {
+    console.log("No shortname");
     return <Hero />;
   }
 
   const presentation = await api.presentations.getByShortname(shortname);
 
+  console.log("Presentation:", presentation);
   if (!presentation) {
     notFound();
   }
