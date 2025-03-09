@@ -7,10 +7,22 @@
 import { Button } from "~/components/ui/button";
 import { UploadButton } from "./uploadthing";
 import { api } from "~/trpc/react";
-import { Loader, Trash2, Lock } from "react-feather";
+import { Loader, Trash2, Lock, Unlock } from "react-feather";
 import type { files, presentations } from "~/server/db/schema";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
+import { Input } from "~/components/ui/input";
+import { useState, useEffect } from "react";
 
 type FileType = "presentation" | "handout" | "research" | "logo" | "cover";
+
+// FIXME: The uploader isnt showing!!!
 
 interface FileContainerProps {
   presentationId?: string;
@@ -25,15 +37,24 @@ export default function FileContainer({
   disabled = false,
   onSuccess,
 }: FileContainerProps) {
-  if (!presentationId) {
-    return <CreateFirst />;
-  }
-  // Fetch the presentation to get the fileId
+  // Add state for the alert dialogs and password inputs
+  const [isLockDialogOpen, setIsLockDialogOpen] = useState(false);
+  const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
+  const [isChangePasswordDialogOpen, setIsChangePasswordDialogOpen] =
+    useState(false);
+  const [password, setPassword] = useState("");
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
+
+  // Fetch the presentation to get the fileId - at the top level
   const {
     data: presentation,
-    isLoading: loadingPresentation,
-    refetch,
-  } = api.presentations.getById.useQuery(presentationId, {
+    isPending: loadingPresentation,
+    refetch: refetchPresentation,
+  } = api.presentations.getById.useQuery(presentationId ?? "", {
     enabled: !disabled && Boolean(presentationId),
   });
 
@@ -41,18 +62,19 @@ export default function FileContainer({
   const fileId = presentation && getFileIdByType(presentation, fileType);
 
   // Fetch file data if we have a fileId
-  const { data: file, isLoading: loadingFile } = api.files.getById.useQuery(
-    fileId ?? "",
-    {
-      enabled: Boolean(fileId),
-    },
-  );
+  const {
+    data: file,
+    isPending: loadingFile,
+    refetch: refetchFile,
+  } = api.files.getById.useQuery(fileId ?? "", {
+    enabled: Boolean(fileId),
+  });
 
   // Delete mutation
   const deleteMutation = api.files.deleteById.useMutation({
     onSuccess: () => {
       if (onSuccess) onSuccess();
-      void refetch();
+      void refetchPresentation();
     },
   });
 
@@ -63,8 +85,190 @@ export default function FileContainer({
     }
   };
 
+  const lockMutation = api.files.editLock.useMutation({
+    onSuccess: (data) => {
+      setIsValidating(false);
+
+      if (data.success) {
+        void refetchPresentation();
+        void refetchFile();
+        if (onSuccess) onSuccess();
+
+        if (data.code.startsWith("sc.200")) {
+          // Close dialogs only on success
+          setIsLockDialogOpen(false);
+          setIsUnlockDialogOpen(false);
+          setIsChangePasswordDialogOpen(false);
+
+          // Reset form fields
+          setPassword("");
+          setOldPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setErrorMessage("");
+        }
+      } else {
+        // Show error message but keep dialog open
+        setErrorMessage(data.message);
+      }
+    },
+    onError: (_error) => {
+      setIsValidating(false);
+      setErrorMessage("An unexpected error occurred. Please try again.");
+    },
+  });
+
+  // Add the lock/unlock handlers
+  const handleLock = () => {
+    setIsValidating(true);
+
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match");
+      setIsValidating(false);
+      return;
+    }
+
+    if (fileId) {
+      lockMutation.mutate({
+        fileId,
+        procedure: "lock",
+        newPassword: password,
+      });
+    }
+  };
+
+  const handleUnlock = () => {
+    setIsValidating(true);
+
+    if (!password) {
+      setErrorMessage("Password is required");
+      setIsValidating(false);
+      return;
+    }
+
+    if (fileId) {
+      lockMutation.mutate({
+        fileId,
+        procedure: "unlock",
+        oldPassword: password,
+      });
+    }
+  };
+
+  const handleChangePassword = () => {
+    setIsValidating(true);
+
+    if (!oldPassword) {
+      setErrorMessage("Current password is required");
+      setIsValidating(false);
+      return;
+    }
+
+    if (!newPassword) {
+      setErrorMessage("New password is required");
+      setIsValidating(false);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrorMessage("New passwords do not match");
+      setIsValidating(false);
+      return;
+    }
+
+    if (fileId) {
+      lockMutation.mutate({
+        fileId,
+        procedure: "changePassword",
+        oldPassword,
+        newPassword,
+      });
+    }
+  };
+
+  // Handle cancel button clicks
+  const handleCancel = (dialogType: "lock" | "unlock" | "changePassword") => {
+    if (lockMutation.isPending || isValidating) {
+      return;
+    }
+
+    switch (dialogType) {
+      case "lock":
+        setIsLockDialogOpen(false);
+        setPassword("");
+        setConfirmPassword("");
+        break;
+      case "unlock":
+        setIsUnlockDialogOpen(false);
+        setPassword("");
+        break;
+      case "changePassword":
+        setIsChangePasswordDialogOpen(false);
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        break;
+    }
+    setErrorMessage("");
+  };
+
+  // Reset error message when dialogs close
+  useEffect(() => {
+    if (
+      !isLockDialogOpen &&
+      !isUnlockDialogOpen &&
+      !isChangePasswordDialogOpen
+    ) {
+      setErrorMessage("");
+      setIsValidating(false);
+    }
+  }, [isLockDialogOpen, isUnlockDialogOpen, isChangePasswordDialogOpen]);
+
+  // Function to handle dialog close attempts
+  const handleDialogOpenChange = (
+    open: boolean,
+    dialogType: "lock" | "unlock" | "changePassword",
+  ) => {
+    // Prevent closing if operation is in progress
+    if (!open && (lockMutation.isPending || isValidating)) {
+      return;
+    }
+
+    // Otherwise, update the dialog state
+    switch (dialogType) {
+      case "lock":
+        setIsLockDialogOpen(open);
+        if (!open) {
+          setPassword("");
+          setConfirmPassword("");
+          setErrorMessage("");
+        }
+        break;
+      case "unlock":
+        setIsUnlockDialogOpen(open);
+        if (!open) {
+          setPassword("");
+          setErrorMessage("");
+        }
+        break;
+      case "changePassword":
+        setIsChangePasswordDialogOpen(open);
+        if (!open) {
+          setOldPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setErrorMessage("");
+        }
+        break;
+    }
+  };
+
+  if (!presentationId) {
+    return <CreateFirst />;
+  }
+
   // Loading state
-  if ((loadingPresentation || loadingFile) && !disabled) {
+  if (file && (loadingPresentation || loadingFile) && !disabled) {
     return <LoadingFile />;
   }
 
@@ -76,7 +280,7 @@ export default function FileContainer({
         fileType={fileType}
         disabled={disabled}
         onSuccess={onSuccess}
-        refetch={refetch}
+        refetchPresentation={refetchPresentation}
       />
     );
   }
@@ -88,10 +292,42 @@ export default function FileContainer({
         <h3 className="font-medium">{getTitle(fileType)}</h3>
         <div className="flex space-x-2">
           {fileType === "presentation" && (
-            <Button type="button" size="sm" variant="outline">
-              <Lock className="h-4 w-4 mr-1" />
-              Unlocked
-            </Button>
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (file?.isLocked) {
+                    handleDialogOpenChange(true, "unlock");
+                  } else {
+                    handleDialogOpenChange(true, "lock");
+                  }
+                }}
+              >
+                {file?.isLocked ? (
+                  <>
+                    <Lock className="h-4 w-4 mr-1" />
+                    Locked
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="h-4 w-4 mr-1" />
+                    Unlocked
+                  </>
+                )}
+              </Button>
+              {file?.isLocked && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleDialogOpenChange(true, "changePassword")}
+                >
+                  Change Password
+                </Button>
+              )}
+            </>
           )}
           <Button
             onClick={handleDelete}
@@ -112,6 +348,230 @@ export default function FileContainer({
       <div className="p-4">
         <FilePreview file={file} fileType={fileType} />
       </div>
+      {/* Lock Dialog */}
+      <AlertDialog
+        open={isLockDialogOpen}
+        onOpenChange={(open) => handleDialogOpenChange(open, "lock")}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Lock Presentation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Set a password to lock your presentation. You&apos;ll need this
+              password to access it later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium">
+                Password
+              </label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                disabled={lockMutation.isPending || isValidating}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="confirmPassword" className="text-sm font-medium">
+                Confirm Password
+              </label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm password"
+                disabled={lockMutation.isPending || isValidating}
+              />
+            </div>
+            {errorMessage && (
+              <p className="text-sm text-destructive">{errorMessage}</p>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleCancel("lock")}
+              disabled={lockMutation.isPending || isValidating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleLock}
+              disabled={
+                !password ||
+                !confirmPassword ||
+                lockMutation.isPending ||
+                isValidating
+              }
+            >
+              {lockMutation.isPending || isValidating ? (
+                <>
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  Locking...
+                </>
+              ) : (
+                "Lock"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unlock Dialog */}
+      <AlertDialog
+        open={isUnlockDialogOpen}
+        onOpenChange={(open) => handleDialogOpenChange(open, "unlock")}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unlock Presentation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter your password to unlock the presentation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="unlockPassword" className="text-sm font-medium">
+                Password
+              </label>
+              <Input
+                id="unlockPassword"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                disabled={lockMutation.isPending || isValidating}
+              />
+            </div>
+            {errorMessage && (
+              <p className="text-sm text-destructive">{errorMessage}</p>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleCancel("unlock")}
+              disabled={lockMutation.isPending || isValidating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleUnlock}
+              disabled={!password || lockMutation.isPending || isValidating}
+            >
+              {lockMutation.isPending || isValidating ? (
+                <>
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  Unlocking...
+                </>
+              ) : (
+                "Unlock"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Change Password Dialog */}
+      <AlertDialog
+        open={isChangePasswordDialogOpen}
+        onOpenChange={(open) => handleDialogOpenChange(open, "changePassword")}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Password</AlertDialogTitle>
+            <AlertDialogDescription>
+              Update the password for your locked presentation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="oldPassword" className="text-sm font-medium">
+                Current Password
+              </label>
+              <Input
+                id="oldPassword"
+                type="password"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                placeholder="Enter current password"
+                disabled={lockMutation.isPending || isValidating}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="newPassword" className="text-sm font-medium">
+                New Password
+              </label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                disabled={lockMutation.isPending || isValidating}
+              />
+            </div>
+            <div className="space-y-2">
+              <label
+                htmlFor="confirmNewPassword"
+                className="text-sm font-medium"
+              >
+                Confirm New Password
+              </label>
+              <Input
+                id="confirmNewPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                disabled={lockMutation.isPending || isValidating}
+              />
+            </div>
+            {errorMessage && (
+              <p className="text-sm text-destructive">{errorMessage}</p>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleCancel("changePassword")}
+              disabled={lockMutation.isPending || isValidating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleChangePassword}
+              disabled={
+                !oldPassword ||
+                !newPassword ||
+                !confirmPassword ||
+                lockMutation.isPending ||
+                isValidating
+              }
+            >
+              {lockMutation.isPending || isValidating ? (
+                <>
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update Password"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -163,13 +623,14 @@ function UploadComponent({
   fileType,
   disabled = false,
   onSuccess,
-  refetch,
+  refetchPresentation,
 }: {
   presentationId: string;
   fileType: FileType;
   disabled?: boolean;
   onSuccess?: () => void;
-  refetch: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  refetchPresentation: () => Promise<any>;
 }) {
   if (disabled) {
     return <CreateFirst />;
@@ -181,7 +642,7 @@ function UploadComponent({
         fileType={fileType}
         presentationId={presentationId}
         onSuccess={onSuccess}
-        refetch={refetch}
+        refetchPresentation={refetchPresentation}
       />
     </div>
   );
@@ -202,12 +663,13 @@ function UploadPreConfigured({
   fileType,
   presentationId,
   onSuccess,
-  refetch,
+  refetchPresentation,
 }: {
   fileType: FileType;
   presentationId: string;
   onSuccess?: () => void;
-  refetch: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  refetchPresentation: () => Promise<any>;
 }) {
   const endpoint:
     | "presentationUploader"
@@ -237,7 +699,7 @@ function UploadPreConfigured({
       input={input}
       onClientUploadComplete={() => {
         if (onSuccess) onSuccess();
-        void refetch();
+        void refetchPresentation();
       }}
       config={{
         mode: "auto",

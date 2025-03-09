@@ -88,6 +88,10 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
     });
 
   const callCheckShortname = async () => {
+    await validateForm();
+  };
+
+  const checkShortname = async () => {
     if (!formData.shortname) return;
 
     setIsCheckingShortname(true);
@@ -169,7 +173,7 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
       newErrors.title = "Title is required";
     }
 
-    await callCheckShortname();
+    await checkShortname();
 
     if (!formData.shortname.trim()) {
       newErrors.shortname = "Shortname is required";
