@@ -28,11 +28,10 @@ async function getShortname(
   }
 }
 
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams: SearchParams;
+export async function generateMetadata(props: {
+  searchParams: Promise<SearchParams>;
 }): Promise<Metadata> {
+  const searchParams = await props.searchParams;
   const shortname = await getShortname(searchParams);
 
   if (!shortname) {
@@ -57,15 +56,11 @@ export async function generateMetadata({
   };
 }
 
-// Define the correct type for the Page component
-interface PageProps {
+export default async function Page(props: {
   searchParams: Promise<SearchParams>;
-}
-
-export default async function Page({ searchParams }: PageProps) {
-  const resolvedSearchParams = await searchParams;
-  const shortname = await getShortname(resolvedSearchParams);
-
+}) {
+  const searchParams = await props.searchParams;
+  const shortname = await getShortname(searchParams);
   if (!shortname) {
     return <Hero />;
   }
