@@ -298,4 +298,48 @@ export const fileRouter = createTRPCRouter({
           throw new Error("Error Unreachable");
       }
     }),
+  verifyPassword: publicProcedure
+    .input(
+      z.object({
+        fileId: z.string().uuid(),
+        password: z.string(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const tfile = await db
+        .select()
+        .from(files)
+        .where(eq(files.id, input.fileId));
+
+      const file = tfile[0];
+
+      if (!file) {
+        return {
+          success: false,
+          code: "ex.404.file",
+          message: "File not found",
+        };
+      }
+
+      if (!file.password) {
+        return {
+          success: false,
+          code: "ex.400.password",
+          message: "File is not password protected",
+        };
+      }
+
+      const hashedPassword = crypto
+        .createHash("sha256")
+        .update(input.password)
+        .digest("hex");
+
+      const match = await argon2.verify(file.password, hashedPassword);
+
+      return {
+        success: match,
+        code: match ? "sc.200.success" : "ex.401.password",
+        message: match ? "Password verified" : "Incorrect password",
+      };
+    }),
 });

@@ -1,58 +1,80 @@
-import Link from "next/link";
-import { getPresentations } from "~/lib/data";
-import PresentationGrid from "~/components/presentation-grid";
-import PresentationDetail from "~/components/presentation-detail";
+import type { Metadata } from "next";
+import { env } from "~/env";
+import { api } from "~/trpc/server";
+import Hero from "~/components/hero";
+import ViewPresentation from "~/components/view-presentation";
+import { notFound } from "next/navigation";
 
-export default function Home({
+interface SearchParams {
+  dev?: string;
+  shortname?: string;
+}
+
+// Function to get shortname based on environment and URL
+async function getShortname(
+  searchParams: SearchParams,
+): Promise<string | null> {
+  const currentUrl =
+    typeof window !== "undefined" ? window.location.hostname : "";
+
+  if (env.NODE_ENV === "development" || searchParams.dev === "true") {
+    return searchParams.shortname ?? null;
+  } else if (!currentUrl.endsWith(".pr.djl.foundation")) {
+    return null;
+  } else {
+    // Extract the subdomain from the URL
+    const subdomain = currentUrl.split(".")[0];
+    return subdomain ?? null;
+  }
+}
+
+export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  const presentations = getPresentations();
-  const shortname = searchParams.i as string | undefined;
+  searchParams: SearchParams;
+}): Promise<Metadata> {
+  const shortname = await getShortname(searchParams);
 
-  // If shortname is provided, show the specific presentation
-  if (shortname) {
-    const presentation = presentations.find((p) => p.shortname === shortname);
-
-    if (!presentation) {
-      return (
-        <div className="container mx-auto px-4 py-12">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Presentation Not Found</h1>
-            <p className="mb-6">
-              The presentation with shortname "{shortname}" could not be found.
-            </p>
-            <Link
-            prefetch
-              href="/"
-              className="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      );
-    }
-
-    return <PresentationDetail presentation={presentation} />;
+  if (!shortname) {
+    return {
+      title: "Presentation Foundation by @DJL",
+    };
   }
 
-  // Otherwise, show the grid of all public presentations
-  const publicPresentations = presentations.filter(
-    (p) => p.visibility === "public",
-  );
+  const presentation = await api.presentations.getByShortname(shortname);
 
-  return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8 text-center">
-        Presentation Foundation
-      </h1>
-      <p className="text-center mb-12 max-w-2xl mx-auto">
-        Share your presentations, handouts, and research materials without the
-        need for cloud storage logins.
-      </p>
-      <PresentationGrid presentations={publicPresentations} />
-    </div>
-  );
+  if (!presentation) {
+    return {
+      title: "Presentation Not Found - Presentation Foundation by @DJL",
+    };
+  }
+
+  return {
+    title: `${presentation.title} - Presentation Foundation by @DJL`,
+    description:
+      presentation.description ??
+      "View this presentation on Presentation Foundation",
+  };
+}
+
+// Define the correct type for the Page component
+interface PageProps {
+  searchParams: Promise<SearchParams>;
+}
+
+export default async function Page({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
+  const shortname = await getShortname(resolvedSearchParams);
+
+  if (!shortname) {
+    return <Hero />;
+  }
+
+  const presentation = await api.presentations.getByShortname(shortname);
+
+  if (!presentation) {
+    notFound();
+  }
+
+  return <ViewPresentation shortname={shortname} />;
 }

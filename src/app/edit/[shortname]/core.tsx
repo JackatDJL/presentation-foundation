@@ -30,7 +30,6 @@ import {
 import { Loader, Trash2 } from "react-feather";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -441,7 +440,7 @@ function PresentationForm({
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
+                    <Button
                       onClick={handleDelete}
                       type="button"
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -454,7 +453,7 @@ function PresentationForm({
                       ) : (
                         "Delete"
                       )}
-                    </AlertDialogAction>
+                    </Button>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
