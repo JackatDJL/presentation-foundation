@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useRef, useState } from "react";
-import { motion, useInView } from "motion/react";
-import { Waitlist } from "@clerk/nextjs";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
+import { SignedOut, Waitlist } from "@clerk/nextjs";
 import Image from "next/image";
 import {
   Clock,
@@ -27,12 +27,9 @@ import {
 // Create animated versions of shadcn components
 const MotionCard = motion(Card);
 const MotionCardContent = motion(CardContent);
-const MotionCardHeader = motion(CardHeader);
-const MotionCardTitle = motion(CardTitle);
-const MotionCardDescription = motion(CardDescription);
 
 export default function Hero() {
-  const [activeTab, setActiveTab] = useState("usb");
+  const [activeScenario, setActiveScenario] = useState(0);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
 
@@ -71,6 +68,15 @@ export default function Hero() {
     },
   ];
 
+  // Auto-rotate through scenarios
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveScenario((prev) => (prev + 1) % scenarios.length);
+    }, 5000); // Change every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [scenarios.length]);
+
   return (
     <main className="container mx-auto px-4 pt-10 pb-20">
       <section className="py-12 md:py-20">
@@ -104,9 +110,11 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
           >
-            <Button size="lg" asChild>
-              <a href="#waitlist">Join the Waitlist</a>
-            </Button>
+            <SignedOut>
+              <Button size="lg" asChild>
+                <a href="#waitlist">Join the Waitlist</a>
+              </Button>
+            </SignedOut>
             <Button size="lg" variant="secondary" asChild>
               <a href="#how-it-works">See How It Works</a>
             </Button>
@@ -122,81 +130,93 @@ export default function Hero() {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl -z-10" />
 
           <Card className="overflow-hidden">
-            <div className="border-b">
-              <div className="flex overflow-x-auto scrollbar-hide">
-                {scenarios.map((scenario, _index) => (
-                  <button
-                    key={scenario.value}
-                    onClick={() => setActiveTab(scenario.value)}
-                    className={`px-6 py-4 text-sm font-medium whitespace-nowrap transition-colors relative ${
-                      activeTab === scenario.value
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground"
+            {/* Progress indicators */}
+            <div className="flex justify-center gap-2 pt-4">
+              {scenarios.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveScenario(index)}
+                  className="p-1"
+                >
+                  <div
+                    className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
+                      activeScenario === index
+                        ? "bg-primary"
+                        : "bg-gray-200 dark:bg-gray-700"
                     }`}
-                  >
-                    {scenario.title}
-                    {activeTab === scenario.value && (
-                      <motion.div
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                        layoutId="activeTab"
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
+                  />
+                </button>
+              ))}
             </div>
 
             <CardContent className="p-6">
-              {scenarios.map((scenario) => (
-                <div
-                  key={scenario.value}
-                  className={activeTab === scenario.value ? "block" : "hidden"}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeScenario}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.5 }}
+                  className="grid md:grid-cols-2 gap-8 items-center"
                 >
-                  <div className="grid md:grid-cols-2 gap-8 items-center">
-                    <div>
-                      <div className="flex items-center gap-4 mb-4">
-                        {scenario.icon}
-                        <h3 className="text-2xl font-bold">{scenario.title}</h3>
-                      </div>
-                      <p className="text-lg text-muted-foreground mb-6">
-                        {scenario.description}
-                      </p>
-                      <ul className="space-y-3">
-                        <li className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                          <span>Instant access from any browser</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                          <span>No downloads or installations required</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                          <span>Simple sharing with custom URLs</span>
-                        </li>
-                      </ul>
-                    </div>
-                    <div className="relative">
-                      <motion.div
-                        key={scenario.value}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3 }}
-                        className="rounded-lg overflow-hidden shadow-lg"
-                      >
-                        <Image
-                          src={scenario.image || "/placeholder.svg"}
-                          alt={scenario.title}
-                          width={500}
-                          height={300}
-                          className="w-full h-auto"
-                        />
-                      </motion.div>
-                    </div>
+                  <div>
+                    <motion.div
+                      className="flex items-center gap-4 mb-4"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.2 }}
+                    >
+                      {scenarios[activeScenario]?.icon}
+                      <h3 className="text-2xl font-bold">
+                        {scenarios[activeScenario]?.title}
+                      </h3>
+                    </motion.div>
+                    <motion.p
+                      className="text-lg text-muted-foreground mb-6"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.3 }}
+                    >
+                      {scenarios[activeScenario]?.description}
+                    </motion.p>
+                    <motion.ul
+                      className="space-y-3"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.4 }}
+                    >
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <span>Instant access from any browser</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <span>No downloads or installations required</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <span>Simple sharing with custom URLs</span>
+                      </li>
+                    </motion.ul>
                   </div>
-                </div>
-              ))}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="rounded-lg overflow-hidden shadow-lg"
+                  >
+                    <Image
+                      src={
+                        scenarios[activeScenario]?.image ?? "/placeholder.svg"
+                      }
+                      alt={scenarios[activeScenario]?.title ?? ""}
+                      width={500}
+                      height={300}
+                      className="w-full h-auto"
+                    />
+                  </motion.div>
+                </motion.div>
+              </AnimatePresence>
             </CardContent>
           </Card>
         </motion.div>
@@ -331,37 +351,39 @@ export default function Hero() {
         </Card>
       </section>
 
-      <section className="py-16 mt-16" id="waitlist">
-        <Card className="bg-gradient-to-r from-primary/20 via-primary/10 to-secondary/20 border-none">
-          <CardContent className="p-8 md:p-12">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Join the Waitlist
-              </h2>
-              <p className="text-xl text-muted-foreground mb-8">
-                Be the first to experience the Presentation Foundation when we
-                launch. Enter your email to join our waitlist.
-              </p>
+      <SignedOut>
+        <section className="py-16 mt-16" id="waitlist">
+          <Card className="bg-gradient-to-r from-primary/20 via-primary/10 to-secondary/20 border-none">
+            <CardContent className="p-8 md:p-12">
+              <div className="max-w-3xl mx-auto text-center">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                  Join the Waitlist
+                </h2>
+                <p className="text-xl text-muted-foreground mb-8">
+                  Be the first to experience the Presentation Foundation when we
+                  launch. Enter your email to join our waitlist.
+                </p>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex justify-center">
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-lg">
-                      <Waitlist appearance={{ layout: {} }} />
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex justify-center">
+                      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-lg">
+                        <Waitlist appearance={{ layout: {} }} />
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              <p className="mt-6 text-sm text-muted-foreground">
-                By joining the waitlist, you&apos;ll receive updates about our
-                launch and early access opportunities.
-                <br />A project by the DJL Foundation.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+                <p className="mt-6 text-sm text-muted-foreground">
+                  By joining the waitlist, you&apos;ll receive updates about our
+                  launch and early access opportunities.
+                  <br />A project by the DJL Foundation.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      </SignedOut>
     </main>
   );
 }

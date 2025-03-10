@@ -5,6 +5,8 @@ import { api } from "~/trpc/server";
 import Hero from "~/components/hero";
 import ViewPresentation from "~/components/view-presentation";
 import { notFound } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
+import Home from "~/components/home";
 
 interface SearchParams {
   dev?: string;
@@ -81,7 +83,12 @@ export default async function Page(props: {
 
   const shortname = await getShortname(searchParams);
   if (!shortname) {
-    // console.log("No shortname");
+    const user = await auth();
+    if (!user.userId) {
+      return <Hero />;
+    }
+
+    // TODO: return home
     return <Hero />;
   }
 
