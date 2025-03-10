@@ -16,7 +16,10 @@ export default function Header() {
     <header className="bg-background border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <AsyncHomeLink searchParams={{}}>
+          <AsyncHomeLink
+            searchParams={{}}
+            className="flex items-center space-x-2"
+          >
             <div className="relative w-10 h-10">
               <Image
                 src="/logo.png"
