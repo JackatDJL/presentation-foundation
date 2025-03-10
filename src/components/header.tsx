@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Button } from "./ui/button";
+import { AsyncHomeLink } from "./asyncLink";
 
 export default function Header() {
   const userButtonAppearance = {
@@ -15,7 +16,7 @@ export default function Header() {
     <header className="bg-background border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link prefetch href="/" className="flex items-center space-x-3">
+          <AsyncHomeLink searchParams={{}}>
             <div className="relative w-10 h-10">
               <Image
                 src="/logo.png"
@@ -27,7 +28,7 @@ export default function Header() {
             <span className="text-xl font-semibold">
               Presentation Foundation
             </span>
-          </Link>
+          </AsyncHomeLink>
         </div>
 
         <div className="flex items-center space-x-4">
