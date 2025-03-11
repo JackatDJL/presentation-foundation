@@ -1,15 +1,11 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import type React from "react";
-
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import type { inferRouterInputs } from "@trpc/server";
 import type { AppRouter } from "~/server/api/root";
-
 import { useState } from "react";
 import FileContainer from "~/components/file-container";
 import { api } from "~/trpc/react";
@@ -33,6 +29,7 @@ import {
 } from "~/components/ui/select";
 import { Loader } from "react-feather";
 import { toast } from "sonner";
+import { motion } from "motion/react";
 
 const uuidType = z.string().uuid();
 
@@ -189,197 +186,255 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="flex justify-between items-center mb-8">
+    <motion.div
+      className="container mx-auto px-4 py-12"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div
+        className="flex justify-between items-center mb-8"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
         <h1 className="text-3xl font-bold">Create New Presentation</h1>
         <Button variant="outline" asChild>
           <Link prefetch href="/manage">
             Back to Manage
           </Link>
         </Button>
-      </div>
+      </motion.div>
 
-      <Card>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleFormSubmit();
-          }}
-        >
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-            <CardDescription>Enter your presentation details</CardDescription>
-          </CardHeader>
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <Card>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleFormSubmit();
+            }}
+          >
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+              <CardDescription>Enter your presentation details</CardDescription>
+            </CardHeader>
 
-          <CardContent className="space-y-6">
-            {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    className={errors.title ? "border-destructive" : ""}
-                  />
-                  {errors.title && (
-                    <p className="text-destructive text-sm">{errors.title}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="shortname">Shortname *</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="shortname"
-                      name="shortname"
-                      value={formData.shortname}
-                      onChange={handleChange}
-                      className={errors.shortname ? "border-destructive" : ""}
-                      placeholder="e.g., my-presentation"
-                    />
-                    <Button
-                      type="button"
-                      onClick={() => void callCheckShortname()}
-                      disabled={!formData.shortname || isCheckingShortname}
-                      variant="outline"
-                    >
-                      {isCheckingShortname ? "Checking..." : "Check"}
-                    </Button>
-                  </div>
-                  {errors.shortname && (
-                    <p className="text-destructive text-sm">
-                      {errors.shortname}
-                    </p>
-                  )}
-                  {!errors.shortname && (
-                    <>
-                      {shortnameStatus === "available" && (
-                        <p className="text-green-500 text-sm">Available!</p>
-                      )}
-                      {shortnameStatus === "taken" && (
-                        <p className="text-destructive text-sm">
-                          Already taken
-                        </p>
-                      )}
-                    </>
-                  )}
-                  <p className="text-muted-foreground text-sm">
-                    Only lowercase letters, numbers, and hyphens
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="visibility">Visibility</Label>
-                  <Select
-                    value={formData.visibility}
-                    onValueChange={(value) =>
-                      handleSelectChange("visibility", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select visibility" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="public">Public</SelectItem>
-                      <SelectItem value="private">Private</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="credits">Credits</Label>
-                  <Input
-                    id="credits"
-                    name="credits"
-                    value={formData.credits}
-                    onChange={handleChange}
-                    placeholder="e.g., John Doe or leave blank to use your username"
-                  />
-                </div>
-              </div>
-
-              {/* Media */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Media</h2>
-                <FileContainer fileType="logo" disabled />
-                <FileContainer fileType="cover" disabled />
-              </div>
-            </div>
-
-            {/* Resources */}
-            <div className="pt-6 border-t border-border">
-              <h2 className="text-xl font-semibold mb-4">Resources</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <FileContainer fileType="presentation" disabled />
-                <FileContainer fileType="handout" disabled />
-                <FileContainer fileType="research" disabled />
-              </div>
-            </div>
-
-            {/* Kahoot */}
-            <div className="pt-6 border-t border-border">
-              <h2 className="text-xl font-semibold mb-4">Interactive Quiz</h2>
+            <CardContent className="space-y-6">
+              {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="kahootPin">Kahoot PIN</Label>
-                  <Input
-                    id="kahootPin"
-                    name="kahootPin"
-                    value={formData.kahootPin}
-                    onChange={handleChange}
-                    placeholder="123456 or 'none' for loading"
-                  />
-                  <p className="text-muted-foreground text-sm">
-                    Enter &apos;none&apos; to show a loading animation
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="kahootId">Kahoot Self-Host URL</Label>
-                  <Input
-                    id="kahootId"
-                    name="kahootId"
-                    value={formData.kahootId}
-                    onChange={handleChange}
-                    placeholder="https://kahoot.it/challenge/123456"
-                  />
-                </div>
-              </div>
-            </div>
+                <motion.div
+                  className="space-y-4"
+                  initial={{ x: -10, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.3 }}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Title *</Label>
+                    <Input
+                      id="title"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      className={errors.title ? "border-destructive" : ""}
+                    />
+                    {errors.title && (
+                      <p className="text-destructive text-sm">{errors.title}</p>
+                    )}
+                  </div>
 
-            <div className="flex justify-end space-x-4 pt-6 border-t border-border">
-              <Button variant="outline" asChild>
-                <Link prefetch href="/manage">
-                  Cancel
-                </Link>
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Presentation"
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </form>
-      </Card>
-    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shortname">Shortname *</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="shortname"
+                        name="shortname"
+                        value={formData.shortname}
+                        onChange={handleChange}
+                        className={errors.shortname ? "border-destructive" : ""}
+                        placeholder="e.g., my-presentation"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => void callCheckShortname()}
+                        disabled={!formData.shortname || isCheckingShortname}
+                        variant="outline"
+                      >
+                        {isCheckingShortname ? "Checking..." : "Check"}
+                      </Button>
+                    </div>
+                    {errors.shortname && (
+                      <p className="text-destructive text-sm">
+                        {errors.shortname}
+                      </p>
+                    )}
+                    {!errors.shortname && (
+                      <>
+                        {shortnameStatus === "available" && (
+                          <motion.p
+                            className="text-green-500 text-sm"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            Available!
+                          </motion.p>
+                        )}
+                        {shortnameStatus === "taken" && (
+                          <motion.p
+                            className="text-destructive text-sm"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            Already taken
+                          </motion.p>
+                        )}
+                      </>
+                    )}
+                    <p className="text-muted-foreground text-sm">
+                      Only lowercase letters, numbers, and hyphens
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="visibility">Visibility</Label>
+                    <Select
+                      value={formData.visibility}
+                      onValueChange={(value) =>
+                        handleSelectChange("visibility", value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select visibility" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="public">Public</SelectItem>
+                        <SelectItem value="private">Private</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="credits">Credits</Label>
+                    <Input
+                      id="credits"
+                      name="credits"
+                      value={formData.credits}
+                      onChange={handleChange}
+                      placeholder="e.g., John Doe or leave blank to use your username"
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Media */}
+                <motion.div
+                  className="space-y-4"
+                  initial={{ x: 10, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.4 }}
+                >
+                  <h2 className="text-xl font-semibold">Media</h2>
+                  <FileContainer fileType="logo" disabled />
+                  <FileContainer fileType="cover" disabled />
+                </motion.div>
+              </div>
+
+              {/* Resources */}
+              <motion.div
+                className="pt-6 border-t border-border"
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.5 }}
+              >
+                <h2 className="text-xl font-semibold mb-4">Resources</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FileContainer fileType="presentation" disabled />
+                  <FileContainer fileType="handout" disabled />
+                  <FileContainer fileType="research" disabled />
+                </div>
+              </motion.div>
+
+              {/* Kahoot */}
+              <motion.div
+                className="pt-6 border-t border-border"
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.6 }}
+              >
+                <h2 className="text-xl font-semibold mb-4">Interactive Quiz</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="kahootPin">Kahoot PIN</Label>
+                    <Input
+                      id="kahootPin"
+                      name="kahootPin"
+                      value={formData.kahootPin}
+                      onChange={handleChange}
+                      placeholder="123456 or 'none' for loading"
+                    />
+                    <p className="text-muted-foreground text-sm">
+                      Enter &apos;none&apos; to show a loading animation
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="kahootId">Kahoot Self-Host URL</Label>
+                    <Input
+                      id="kahootId"
+                      name="kahootId"
+                      value={formData.kahootId}
+                      onChange={handleChange}
+                      placeholder="https://kahoot.it/challenge/123456"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="flex justify-end space-x-4 pt-6 border-t border-border"
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.7 }}
+              >
+                <Button variant="outline" asChild>
+                  <Link prefetch href="/manage">
+                    Cancel
+                  </Link>
+                </Button>
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Presentation"
+                    )}
+                  </Button>
+                </motion.div>
+              </motion.div>
+            </CardContent>
+          </form>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }

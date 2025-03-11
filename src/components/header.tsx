@@ -19,6 +19,7 @@ export default function Header() {
           <AsyncHomeLink
             searchParams={{}}
             className="flex items-center space-x-2"
+            spinIt={false}
           >
             <div className="relative w-10 h-10">
               <Image

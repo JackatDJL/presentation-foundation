@@ -11,6 +11,7 @@ interface AsyncViewLinkProps {
   shortname: string;
   className?: string;
   children: React.ReactNode;
+  spinIt?: boolean;
 }
 
 export function AsyncViewLink({
@@ -18,6 +19,7 @@ export function AsyncViewLink({
   shortname,
   className,
   children,
+  spinIt = true,
 }: AsyncViewLinkProps) {
   const [href, setHref] = useState<string | null>(null);
 
@@ -32,7 +34,11 @@ export function AsyncViewLink({
   }, [searchParams, shortname]);
 
   if (!href) {
-    return <LoadingSpinner />;
+    if (spinIt) {
+      return <LoadingSpinner />;
+    } else {
+      return children;
+    }
   }
 
   return (
@@ -46,12 +52,14 @@ interface AsyncHomeLinkProps {
   searchParams: SearchParams;
   className?: string;
   children: React.ReactNode;
+  spinIt?: boolean;
 }
 
 export function AsyncHomeLink({
   searchParams,
   className,
   children,
+  spinIt = true,
 }: AsyncHomeLinkProps) {
   const [href, setHref] = useState<string | null>(null);
 
@@ -66,7 +74,11 @@ export function AsyncHomeLink({
   }, [searchParams]);
 
   if (!href) {
-    return <LoadingSpinner />;
+    if (spinIt) {
+      return <LoadingSpinner />;
+    } else {
+      return children;
+    }
   }
 
   return (

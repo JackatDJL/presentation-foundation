@@ -5,7 +5,7 @@ import { api } from "~/trpc/server";
 import Hero from "~/components/hero";
 import ViewPresentation from "~/components/view-presentation";
 import { notFound } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import Home from "~/components/home";
 
 interface SearchParams {
@@ -83,13 +83,17 @@ export default async function Page(props: {
 
   const shortname = await getShortname(searchParams);
   if (!shortname) {
-    const user = await auth();
-    if (!user.userId) {
+    const autth = await auth();
+    if (!autth.userId) {
       return <Hero />;
     }
+    const user = await currentUser();
 
-    // TODO: return home
-    return <Hero />;
+    if (!user) {
+      return;
+    }
+
+    return <Home userId={user.id} firstName={user.firstName ?? undefined} />;
   }
 
   const presentation = await api.presentations.getByShortname(shortname);

@@ -22,8 +22,6 @@ import { useState, useEffect } from "react";
 
 type FileType = "presentation" | "handout" | "research" | "logo" | "cover";
 
-// FIXME: The uploader isnt showing!!!
-
 interface FileContainerProps {
   presentationId?: string;
   fileType: FileType;
@@ -288,7 +286,7 @@ export default function FileContainer({
   // File is uploaded, show the file preview
   return (
     <div className="border border-border rounded-lg overflow-hidden">
-      <div className="p-4 bg-muted border-b border-border flex justify-between items-center">
+      <div className="p-4 bg-secondary border-b border-border flex justify-between items-center">
         <h3 className="font-medium">{getTitle(fileType)}</h3>
         <div className="flex space-x-2">
           {fileType === "presentation" && (
@@ -307,7 +305,7 @@ export default function FileContainer({
               >
                 {file?.isLocked ? (
                   <>
-                    <Lock className="h-4 w-4 mr-1" />
+                    <Lock className="h-4 w-4 mr-1 " />
                     Locked
                   </>
                 ) : (
@@ -337,9 +335,9 @@ export default function FileContainer({
             disabled={deleteMutation.isPending}
           >
             {deleteMutation.isPending ? (
-              <Loader className="h-4 w-4 animate-spin" />
+              <Loader className="h-4 w-4 animate-spin text-foreground" />
             ) : (
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 text-foreground" />
             )}
           </Button>
         </div>

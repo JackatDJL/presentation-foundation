@@ -3,8 +3,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useUser, useClerk } from "@clerk/nextjs";
-import { PlusCircle, Folder, Settings, Clock, FileText } from "react-feather";
+import { useClerk } from "@clerk/nextjs";
+import {
+  PlusCircle,
+  Folder,
+  Settings,
+  Clock,
+  FileText,
+  Loader,
+} from "react-feather";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -14,48 +21,32 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { api } from "~/trpc/react";
+import type { presentations } from "~/server/db/schema";
+import { AsyncViewLink } from "./asyncLink";
 
-interface Presentation {
-  id: string;
-  title: string;
-  lastEdited: string;
-  views: number;
-}
-
-// TODO: Implement Data
-export default function Home() {
-  const { user } = useUser();
+export default function Home({
+  userId,
+  firstName,
+}: {
+  userId: string;
+  firstName?: string;
+}) {
   const { redirectToUserProfile } = useClerk();
   const [recentPresentations, setRecentPresentations] = useState<
-    Presentation[]
+    (typeof presentations.$inferSelect)[]
   >([]);
 
-  // Simulate loading recent presentations
-  useEffect(() => {
-    // This would be replaced with an actual API call
-    const mockPresentations = [
-      {
-        id: "pres-1",
-        title: "Biology 101 Final Project",
-        lastEdited: "2 days ago",
-        views: 24,
-      },
-      {
-        id: "pres-2",
-        title: "Physics Experiment Results",
-        lastEdited: "1 week ago",
-        views: 56,
-      },
-      {
-        id: "pres-3",
-        title: "Team Project Kickoff",
-        lastEdited: "3 weeks ago",
-        views: 128,
-      },
-    ];
+  const query = api.recent.pullByUID.useQuery({
+    uid: userId,
+    limit: 4,
+  });
 
-    setRecentPresentations(mockPresentations);
-  }, []);
+  useEffect(() => {
+    if (query.data) {
+      setRecentPresentations(query.data);
+    }
+  }, [query.data]);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -72,7 +63,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            Welcome, {user?.firstName ?? "there"}!
+            Welcome, {firstName ?? "there"}!
           </motion.h1>
           <motion.p
             className="text-xl text-muted-foreground"
@@ -166,7 +157,11 @@ export default function Home() {
         >
           <h2 className="text-2xl font-bold mb-4">Recent Presentations</h2>
 
-          {recentPresentations.length > 0 ? (
+          {query.isPending ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader className="h-8 w-8 animate-spin" />
+            </div>
+          ) : recentPresentations.length > 0 ? (
             <div className="grid gap-4">
               {recentPresentations.map((presentation, index) => (
                 <motion.div
@@ -175,7 +170,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
                 >
-                  <Card className="hover:bg-accent/50 transition-colors">
+                  <Card className="hover:bg-accent/20 transition-colors">
                     <CardContent className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <FileText className="h-10 w-10 text-muted-foreground" />
@@ -184,18 +179,29 @@ export default function Home() {
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />{" "}
-                              {presentation.lastEdited}
+                              {new Date(
+                                presentation.updatedAt,
+                              ).toLocaleString()}
                             </span>
-                            <span>{presentation.views} views</span>
                           </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/edit/${presentation.id}`}>Edit</Link>
+                          <Link
+                            prefetch
+                            href={`/edit/${presentation.shortname}`}
+                          >
+                            Edit
+                          </Link>
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/view/${presentation.id}`}>View</Link>
+                          <AsyncViewLink
+                            searchParams={{}}
+                            shortname={presentation.shortname}
+                          >
+                            View
+                          </AsyncViewLink>
                         </Button>
                       </div>
                     </CardContent>
@@ -210,7 +216,9 @@ export default function Home() {
                   You don&apos;t have any presentations yet.
                 </p>
                 <Button asChild className="mt-4">
-                  <Link href="/create">Create Your First Presentation</Link>
+                  <Link prefetch href="/create">
+                    Create Your First Presentation
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
