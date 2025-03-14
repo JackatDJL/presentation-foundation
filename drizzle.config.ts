@@ -6,7 +6,7 @@ export default {
   schema: "./src/server/db/schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: env.DATABASE_URL,
+    url: `postgres://${env.DB_MAIN_PGUSER}:${env.DB_MAIN_PGPASSWORD}@${env.DB_MAIN_PGHOST}/${env.DB_PGDATABASE}?sslmode=require`,
   },
   tablesFilter: ["pr.f-*"],
 } satisfies Config;

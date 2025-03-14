@@ -1,18 +1,19 @@
 {
-  "id": "2d44c26b-d90e-4fb7-a180-fa0a268281d0",
+  "id": "6e0af0b7-97ba-4bd9-85ec-71e1fc1a73c1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.presentation-foundation_files": {
-      "name": "presentation-foundation_files",
+    "public.pr.f-files": {
+      "name": "pr.f-files",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "name": {
           "name": "name",
@@ -20,15 +21,15 @@
           "primaryKey": false,
           "notNull": true
         },
-        "file_types": {
-          "name": "file_types",
+        "fileType": {
+          "name": "fileType",
           "type": "file_types",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
-        "type": {
-          "name": "type",
+        "dataType": {
+          "name": "dataType",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -66,7 +67,7 @@
         },
         "presentation_id": {
           "name": "presentation_id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -137,11 +138,11 @@
           "method": "btree",
           "with": {}
         },
-        "file_type_presentation_id_idx": {
-          "name": "file_type_presentation_id_idx",
+        "fileType_presentation_id_idx": {
+          "name": "fileType_presentation_id_idx",
           "columns": [
             {
-              "expression": "file_types",
+              "expression": "fileType",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -161,20 +162,29 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "pr.f-files_id_unique": {
+          "name": "pr.f-files_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.presentation-foundation_presentations": {
-      "name": "presentation-foundation_presentations",
+    "public.pr.f-presentations": {
+      "name": "pr.f-presentations",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "shortname": {
           "name": "shortname",
@@ -196,33 +206,33 @@
         },
         "logo": {
           "name": "logo",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "cover": {
           "name": "cover",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "presentation": {
           "name": "presentation",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "handout": {
           "name": "handout",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "research": {
           "name": "research",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "kahoot_pin": {
           "name": "kahoot_pin",
@@ -230,8 +240,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "kahoot_self_host_url": {
-          "name": "kahoot_self_host_url",
+        "kahoot_id": {
+          "name": "kahoot_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -242,8 +252,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "visibility_types": {
-          "name": "visibility_types",
+        "visibility": {
+          "name": "visibility",
           "type": "visibility_types",
           "typeSchema": "public",
           "primaryKey": false,
@@ -327,7 +337,7 @@
               "nulls": "last"
             },
             {
-              "expression": "visibility_types",
+              "expression": "visibility",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -342,7 +352,37 @@
           "name": "pr_visibility_idx",
           "columns": [
             {
-              "expression": "visibility_types",
+              "expression": "visibility",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pr_kahoot_pin_idx": {
+          "name": "pr_kahoot_pin_idx",
+          "columns": [
+            {
+              "expression": "kahoot_pin",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pr_kahoot_id_idx": {
+          "name": "pr_kahoot_id_idx",
+          "columns": [
+            {
+              "expression": "kahoot_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -355,10 +395,10 @@
         }
       },
       "foreignKeys": {
-        "presentation-foundation_presentations_logo_presentation-foundation_files_id_fk": {
-          "name": "presentation-foundation_presentations_logo_presentation-foundation_files_id_fk",
-          "tableFrom": "presentation-foundation_presentations",
-          "tableTo": "presentation-foundation_files",
+        "pr.f-presentations_logo_pr.f-files_id_fk": {
+          "name": "pr.f-presentations_logo_pr.f-files_id_fk",
+          "tableFrom": "pr.f-presentations",
+          "tableTo": "pr.f-files",
           "columnsFrom": [
             "logo"
           ],
@@ -368,10 +408,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "presentation-foundation_presentations_cover_presentation-foundation_files_id_fk": {
-          "name": "presentation-foundation_presentations_cover_presentation-foundation_files_id_fk",
-          "tableFrom": "presentation-foundation_presentations",
-          "tableTo": "presentation-foundation_files",
+        "pr.f-presentations_cover_pr.f-files_id_fk": {
+          "name": "pr.f-presentations_cover_pr.f-files_id_fk",
+          "tableFrom": "pr.f-presentations",
+          "tableTo": "pr.f-files",
           "columnsFrom": [
             "cover"
           ],
@@ -381,10 +421,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "presentation-foundation_presentations_presentation_presentation-foundation_files_id_fk": {
-          "name": "presentation-foundation_presentations_presentation_presentation-foundation_files_id_fk",
-          "tableFrom": "presentation-foundation_presentations",
-          "tableTo": "presentation-foundation_files",
+        "pr.f-presentations_presentation_pr.f-files_id_fk": {
+          "name": "pr.f-presentations_presentation_pr.f-files_id_fk",
+          "tableFrom": "pr.f-presentations",
+          "tableTo": "pr.f-files",
           "columnsFrom": [
             "presentation"
           ],
@@ -394,10 +434,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "presentation-foundation_presentations_handout_presentation-foundation_files_id_fk": {
-          "name": "presentation-foundation_presentations_handout_presentation-foundation_files_id_fk",
-          "tableFrom": "presentation-foundation_presentations",
-          "tableTo": "presentation-foundation_files",
+        "pr.f-presentations_handout_pr.f-files_id_fk": {
+          "name": "pr.f-presentations_handout_pr.f-files_id_fk",
+          "tableFrom": "pr.f-presentations",
+          "tableTo": "pr.f-files",
           "columnsFrom": [
             "handout"
           ],
@@ -407,10 +447,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "presentation-foundation_presentations_research_presentation-foundation_files_id_fk": {
-          "name": "presentation-foundation_presentations_research_presentation-foundation_files_id_fk",
-          "tableFrom": "presentation-foundation_presentations",
-          "tableTo": "presentation-foundation_files",
+        "pr.f-presentations_research_pr.f-files_id_fk": {
+          "name": "pr.f-presentations_research_pr.f-files_id_fk",
+          "tableFrom": "pr.f-presentations",
+          "tableTo": "pr.f-files",
           "columnsFrom": [
             "research"
           ],
@@ -423,8 +463,15 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "presentation-foundation_presentations_shortname_unique": {
-          "name": "presentation-foundation_presentations_shortname_unique",
+        "pr.f-presentations_id_unique": {
+          "name": "pr.f-presentations_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id"
+          ]
+        },
+        "pr.f-presentations_shortname_unique": {
+          "name": "pr.f-presentations_shortname_unique",
           "nullsNotDistinct": false,
           "columns": [
             "shortname"
