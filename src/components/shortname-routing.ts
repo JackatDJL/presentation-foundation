@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 export interface SearchParams {
   dev?: string;
@@ -63,6 +64,62 @@ export async function handleShortnameRouting(
       shouldRedirect: true,
     };
   }
+}
+
+/**
+ * Cleans up the URL by removing subdomains of "pr.djl.foundation" and any "shortname" query parameters.
+ * This function takes no input and does not return anything—it immediately redirects if cleanup is needed.
+ */
+export async function cleanup(): Promise<void> {
+  const headerList = await headers();
+  const headersObject: Record<string, string> = {};
+  headerList.forEach((value, key) => {
+    headersObject[key] = value;
+  });
+
+  const baseDomain = "pr.djl.foundation";
+  const host = headersObject.host ?? "";
+  let requiresCleanup = false;
+
+  // Check if the current hostname is a subdomain of the base domain.
+  if (host !== baseDomain && host.endsWith(`.${baseDomain}`)) {
+    requiresCleanup = true;
+  }
+
+  // Retrieve the current URL from the referer header, or fallback to constructing one from the host.
+  const referer = headersObject.referer ?? "";
+  let currentUrl: URL;
+  try {
+    currentUrl = new URL(referer || `https://${host}`);
+  } catch {
+    currentUrl = new URL(`https://${host}`);
+  }
+
+  // Remove the "shortname" query parameter if it exists.
+  if (currentUrl.searchParams.has("shortname")) {
+    requiresCleanup = true;
+    currentUrl.searchParams.delete("shortname");
+  }
+
+  if (!requiresCleanup) {
+    return;
+  }
+
+  // Determine the protocol based on the host.
+  const protocol =
+    host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https";
+
+  // Always redirect to the base domain root.
+  const url = new URL("/", `${protocol}://${baseDomain}`);
+
+  // Preserve the "dev" flag if it exists in the current query string.
+  if (currentUrl.searchParams.get("dev") === "true") {
+    url.searchParams.set("dev", "true");
+  }
+
+  // Immediately perform the redirect.
+  redirect(url.toString());
+  return;
 }
 
 /**

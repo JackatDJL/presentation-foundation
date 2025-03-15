@@ -156,6 +156,7 @@ export default function ManagePresentations({
                                 searchParams={searchParamsObj}
                                 shortname={presentation.shortname}
                                 className="flex items-center gap-1"
+                                spinIt={false}
                               >
                                 <Eye className="h-3.5 w-3.5" />
                                 View

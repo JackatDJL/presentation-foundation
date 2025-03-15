@@ -161,19 +161,20 @@ function KahootButton({ href, label }: { href: string; label: string }) {
 
         {/* Animated particles */}
         <AnimatePresence>
-          {isHovered && (
+          {/* {isHovered && (
             <>
-              {Array.from({ length: 10 }).map((_, i) => (
+              {Array.from({ length: 20 }).map((_, i) => (
                 <motion.div
                   key={i}
                   className="absolute w-2 h-2 bg-white rounded-full opacity-70"
                   initial={{
-                    x: Math.random() * 100 - 50 + "%",
-                    y: "100%",
+                    x: `${Math.random() * 100}%`,
+                    y: `${Math.random() * 100}%`,
                     opacity: 0,
                   }}
                   animate={{
-                    y: "-100%",
+                    y: `${Math.random() * 100 - 150}%`,
+                    x: `${Math.random() * 100 - 50}%`,
                     opacity: [0, 0.8, 0],
                     scale: [0.8, 1.2, 0.5],
                   }}
@@ -186,7 +187,7 @@ function KahootButton({ href, label }: { href: string; label: string }) {
                 />
               ))}
             </>
-          )}
+          )} */}
         </AnimatePresence>
 
         <div className="relative flex items-center space-x-3">

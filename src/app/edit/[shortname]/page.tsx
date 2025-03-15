@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { api } from "~/trpc/server";
 import { EditPage as ThEditPage } from "./core";
-import { notFound } from "next/navigation";
+import PresentationNotFound from "~/components/prnotfound";
+import Unauthorized from "~/components/unauth";
+import { cleanup } from "~/components/shortname-routing";
 
 interface Props {
   params: Promise<{
@@ -10,6 +12,7 @@ interface Props {
   }>;
 }
 
+// TODO: Implement Metadata
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { shortname } = await params;
 
@@ -18,22 +21,41 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `Edit ${data.title} - Presentation Foundation by @DJL`,
+    description: `Edit ${data.title} on The Presentation Foundation.`,
+    openGraph: {
+      title: `Edit ${data.title} - Presentation Foundation by @DJL`,
+      description: `Edit ${data.title} on The Presentation Foundation.`,
+    },
+    robots: {
+      index: false,
+      follow: true,
+    },
+    twitter: {
+      title: `Edit ${data.title} - Presentation Foundation by @DJL`,
+      description: `Edit ${data.title} on The Presentation Foundation.`,
+    },
+    classification: "Private",
   };
 }
 
 export default async function EditPage({ params }: Props) {
-  await auth.protect();
+  const user = await auth.protect();
+  await cleanup();
 
   const { shortname } = await params;
-  const id = await api.presentations.getIdByShortname(shortname);
+  const data = await api.presentations.getByShortname(shortname);
 
-  if (!id) {
-    notFound();
+  if (!data) {
+    return <PresentationNotFound />;
+  }
+
+  if (user.userId !== data.owner) {
+    return <Unauthorized edit />;
   }
 
   return (
     <main className="flex justify-center">
-      <ThEditPage id={id} />
+      <ThEditPage id={data.id} />
     </main>
   );
 }

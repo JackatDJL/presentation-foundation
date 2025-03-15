@@ -13,12 +13,12 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-background border-b">
+    <header className="bg-background border-b print:border-none">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <AsyncHomeLink
             searchParams={{}}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 print:no-underline print:text-foreground"
             spinIt={false}
           >
             <div className="relative w-10 h-10">
@@ -32,10 +32,13 @@ export default function Header() {
             <span className="text-xl font-semibold">
               Presentation Foundation
             </span>
+            <span className="hidden print:block print:text-xl font-semibold">
+              by DJL
+            </span>
           </AsyncHomeLink>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 print:hidden">
           <ThemeToggle />
           <SignedIn>
             <Button asChild>
@@ -45,7 +48,6 @@ export default function Header() {
             </Button>
           </SignedIn>
 
-          {/* Placeholder for Clerk authentication */}
           <div className="relative h-10">
             <SignedIn>
               <UserButton showName appearance={userButtonAppearance} />

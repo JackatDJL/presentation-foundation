@@ -199,6 +199,7 @@ export default function Home({
                           <AsyncViewLink
                             searchParams={{}}
                             shortname={presentation.shortname}
+                            spinIt={false}
                           >
                             View
                           </AsyncViewLink>

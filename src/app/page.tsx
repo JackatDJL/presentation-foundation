@@ -47,6 +47,7 @@ async function getShortname(
   }
 }
 
+// TODO: Implement Image Metadata
 export async function generateMetadata(props: {
   searchParams: Promise<SearchParams>;
 }): Promise<Metadata> {
@@ -54,24 +55,72 @@ export async function generateMetadata(props: {
   const shortname = await getShortname(searchParams);
 
   if (!shortname) {
-    return {
-      title: "Presentation Foundation by @DJL",
-    };
+    return {};
   }
 
   const presentation = await api.presentations.getByShortname(shortname);
 
   if (!presentation) {
     return {
-      title: "Presentation Not Found - Presentation Foundation by @DJL",
+      title: "Presentation Not Found - Presentation Foundation by DJL",
+      description:
+        "The presentation you are looking for does not exist on the Presentation Foundation.",
+
+      openGraph: {
+        title: "Presentation Not Found - Presentation Foundation by DJL",
+        description:
+          "The presentation you are looking for does not exist on the Presentation Foundation.",
+      },
+      twitter: {
+        title: "Presentation Not Found - Presentation Foundation by DJL",
+        description:
+          "The presentation you are looking for does not exist on the Presentation Foundation.",
+      },
+
+      robots: "noindex, nofollow",
+
+      classification: "Private",
     };
   }
 
+  let cover: string | undefined = undefined;
+  if (presentation.cover) {
+    const file = await api.files.getById(presentation.cover);
+    cover = file?.ufsUrl;
+  }
+
   return {
-    title: `${presentation.title} - Presentation Foundation by @DJL`,
+    title: `${presentation.title} - Presentation Foundation by DJL`,
     description:
       presentation.description ??
       "View this presentation on Presentation Foundation",
+    openGraph: {
+      title: `${presentation.title} - Presentation Foundation by DJL`,
+      description:
+        presentation.description ??
+        "View this presentation on Presentation Foundation",
+      url: `https://${shortname}.pr.djl.foundation`,
+      images: {
+        url: cover ?? "/img/og.png",
+        width: 1200,
+        height: 630,
+        alt: `${presentation.title} - Presentation Foundation by DJL`,
+      },
+    },
+    twitter: {
+      title: `${presentation.title} - Presentation Foundation by DJL`,
+      description:
+        presentation.description ??
+        "View this presentation on Presentation Foundation",
+      images: {
+        url: cover ?? "/img/og.png",
+        width: 1200,
+        height: 630,
+        alt: `${presentation.title} - Presentation Foundation by DJL`,
+      },
+    },
+    robots: "index, follow",
+    classification: "Public",
   };
 }
 

@@ -4,7 +4,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { SignedOut, Waitlist } from "@clerk/nextjs";
-import Image from "next/image";
 import {
   Clock,
   Download,
@@ -23,10 +22,11 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import GradientImage from "./gradient-image";
 
 // Create animated versions of shadcn components
-const MotionCard = motion(Card);
-const MotionCardContent = motion(CardContent);
+const MotionCard = motion.create(Card);
+const MotionCardContent = motion.create(CardContent);
 
 export default function Hero() {
   const [activeScenario, setActiveScenario] = useState(0);
@@ -40,7 +40,7 @@ export default function Hero() {
       description:
         "Access your presentations instantly from any browser. No downloads, no logins, no 2FA delays.",
       icon: <Clock className="h-10 w-10 text-primary" />,
-      image: "/placeholder.svg?height=300&width=500",
+      image: "/img/mypr.png",
     },
     {
       value: "share",
@@ -48,7 +48,7 @@ export default function Hero() {
       description:
         "Let students and colleagues download your presentation or handouts directly from a simple URL.",
       icon: <Share2 className="h-10 w-10 text-primary" />,
-      image: "/placeholder.svg?height=300&width=500",
+      image: "/img/share.png",
     },
     {
       value: "kahoot",
@@ -56,7 +56,7 @@ export default function Hero() {
       description:
         "No more repeating join codes. Let everyone join your Kahoot with a single click.",
       icon: <Users className="h-10 w-10 text-primary" />,
-      image: "/placeholder.svg?height=300&width=500",
+      image: "/img/kahoot.png",
     },
     {
       value: "find",
@@ -64,7 +64,7 @@ export default function Hero() {
       description:
         "Instantly access your presentations without searching through complicated platforms.",
       icon: <Zap className="h-10 w-10 text-primary" />,
-      image: "/placeholder.svg?height=300&width=500",
+      image: "/img/list.png",
     },
   ];
 
@@ -203,16 +203,18 @@ export default function Hero() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
-                    className="rounded-lg overflow-hidden shadow-lg"
+                    className="rounded-lg overflow-hidden shadow-lg flex justify-center items-center h-full"
                   >
-                    <Image
+                    <GradientImage
                       src={
                         scenarios[activeScenario]?.image ?? "/placeholder.svg"
                       }
                       alt={scenarios[activeScenario]?.title ?? ""}
                       width={500}
                       height={300}
-                      className="w-full h-auto"
+                      gradientColors={["#f97316", "#d946ef", "#6366f1"]}
+                      blurAmount={50}
+                      className="w-full h-auto object-contain"
                     />
                   </motion.div>
                 </motion.div>
@@ -307,19 +309,19 @@ export default function Hero() {
                 title: "The Forgotten USB Stick",
                 description:
                   "You arrive at school without your USB stick. Instead of panicking, you simply open any browser and navigate to your-presentation.pr.djl.foundation to access your presentation instantly.",
-                image: "/placeholder.svg?height=250&width=400",
+                image: "/img/usb.png",
               },
               {
                 title: "The Sharing Nightmare",
                 description:
                   "After your presentation, students want your handouts. Some have iPads, others have Android devices. Instead of dealing with AirDrop and QuickShare, just tell everyone to visit same-presentation.pr.djl.foundation.",
-                image: "/placeholder.svg?height=250&width=400",
+                image: "/img/handout.png",
               },
               {
                 title: "The Kahoot Chaos",
                 description:
                   "You're running a Kahoot session and students keep asking for the join code. Instead of repeating yourself, use the Presentation Foundation to let everyone join with a single click.",
-                image: "/placeholder.svg?height=250&width=400",
+                image: "/img/pro-kahoot.png",
               },
             ].map((scenario, index) => (
               <motion.div
@@ -336,13 +338,15 @@ export default function Hero() {
                     {scenario.description}
                   </p>
                 </div>
-                <div className="md:w-1/2">
-                  <Image
+                <div className="md:w-1/2 flex justify-center items-center">
+                  <GradientImage
                     src={scenario.image || "/placeholder.svg"}
                     alt={scenario.title}
                     width={400}
                     height={250}
-                    className="rounded-lg shadow-lg w-full h-auto"
+                    gradientColors={["#22c55e", "#10b981", "#0d9488"]}
+                    blurAmount={40}
+                    className="w-full max-w-md h-auto"
                   />
                 </div>
               </motion.div>
