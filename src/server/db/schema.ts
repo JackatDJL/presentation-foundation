@@ -20,7 +20,7 @@ import {
  *
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
-export const createTable = pgTableCreator((name) => `pr.f-${name}`);
+export const createTable = pgTableCreator((name) => `${name}`);
 
 export const file_types = pgEnum("file_types", [
   "logo",
