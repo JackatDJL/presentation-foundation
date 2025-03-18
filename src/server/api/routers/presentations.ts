@@ -8,6 +8,7 @@ import { utapi } from "~/server/uploadthing";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { presentations, files } from "~/server/db/schema";
+import { del } from "@vercel/blob";
 
 export const presentationRouter = createTRPCRouter({
   create: publicProcedure
@@ -170,26 +171,56 @@ export const presentationRouter = createTRPCRouter({
 
       for (const fileId of filesArray) {
         if (!fileId) {
-          continue;
+          throw new Error("No File ID Provided");
         }
-        // console.log("Deleting File", fileId);
-        const filles = await db
-          .select()
-          .from(files)
-          .where(eq(files.id, fileId));
-
-        const file = filles[0];
-        // console.log("File Data", file);
-
+        let file = (
+          await db.select().from(files).where(eq(files.id, fileId))
+        )[0];
         if (!file) {
           throw new Error("File not found");
         }
+        // Immediatly remove the file from the queue so that the file doesnt get lost trancending servers
+        if (file.transferStatus === "queued") {
+          file = (
+            await db
+              .update(files)
+              .set({
+                targetStorage: file.storedIn,
+                transferStatus: "idle",
+              })
+              .where(eq(files.id, input))
+              .returning()
+          )[0];
 
-        const deletionResponse = await utapi.deleteFiles(file.key);
-        if (!deletionResponse.success || deletionResponse.deletedCount !== 1) {
-          throw new Error("Failed to delete file");
+          if (!file) {
+            throw new Error("File not found");
+          }
         }
-        // console.log("Deleted", fileId, "from Uploadthing", deletionResponse);
+        // Get the presentationId and the filetype
+
+        // Delete the file from the corresponding service
+        switch (file.storedIn) {
+          case "utfs":
+            if (!file.ufsKey) {
+              throw new Error("No Key Provided");
+            }
+            const deletionResponse = await utapi.deleteFiles(file.ufsKey);
+            if (
+              !deletionResponse.success ||
+              deletionResponse.deletedCount !== 1
+            ) {
+              throw new Error("Failed to delete file");
+            }
+            break;
+          case "blob":
+            if (!file.blobPath) {
+              throw new Error("No Path Provided");
+            }
+            await del(file.blobPath);
+            break;
+        }
+
+        // Update the presentation to remove the file
 
         const dbPrResponse = await db
           .update(presentations)
@@ -198,7 +229,6 @@ export const presentationRouter = createTRPCRouter({
           })
           .where(eq(presentations.id, file.presentationId))
           .returning();
-        // console.log("Updated Presentation", dbPrResponse);
 
         if (
           dbPrResponse[0]?.[file.fileType] !== null ||
@@ -207,15 +237,14 @@ export const presentationRouter = createTRPCRouter({
           throw new Error("Failed to update presentation");
         }
 
+        // Delete the file from the db
         const dbFileResponse = await db
           .delete(files)
-          .where(eq(files.id, fileId))
+          .where(eq(files.id, input))
           .returning();
-        // console.log("Deleted File", fileId, "from Database", dbFileResponse);
-        if (!dbFileResponse[0]) {
+        if (dbFileResponse.length !== 1) {
           throw new Error("Failed to delete file");
         }
-        // console.log("Deleted File", fileId, "from Database", dbFileResponse);
       }
 
       await db.delete(presentations).where(eq(presentations.id, input));

@@ -114,10 +114,10 @@ export default function ViewPresentation({ shortname }: ViewPresentationProps) {
                   </CardDescription>
                 )}
               </div>
-              {logoFile?.ufsUrl && (
+              {logoFile?.url && (
                 <div className="hidden sm:block">
                   <Image
-                    src={logoFile.ufsUrl || "/placeholder.svg"}
+                    src={logoFile.url || "/placeholder.svg"}
                     alt="Logo"
                     width={120}
                     height={60}
@@ -128,10 +128,10 @@ export default function ViewPresentation({ shortname }: ViewPresentationProps) {
             </div>
           </CardHeader>
 
-          {coverFile?.ufsUrl && (
+          {coverFile?.url && (
             <div className="w-full h-48 sm:h-64 md:h-80 bg-muted overflow-hidden">
               <Image
-                src={coverFile.ufsUrl || "/placeholder.svg"}
+                src={coverFile.url || "/placeholder.svg"}
                 alt="Cover"
                 width={1280}
                 height={320}

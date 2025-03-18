@@ -584,11 +584,11 @@ function FilePreview({
 }) {
   const isImage = fileType === "logo" || fileType === "cover";
 
-  if (isImage && file.ufsUrl) {
+  if (isImage && file.url) {
     return (
       <div className="flex items-center">
         <img
-          src={file.ufsUrl || "/placeholder.svg"}
+          src={file.url || "/placeholder.svg"}
           alt={file.name}
           className="h-20 object-contain mr-3"
         />

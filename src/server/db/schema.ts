@@ -35,6 +35,18 @@ export const visibility_types = pgEnum("visibility_types", [
   "private",
 ]);
 
+export const fileStorage_types = pgEnum("fileStorage_types", [
+  "utfs", // Uploadthing // utfs.io
+  "blob", // Vercel Blob
+  // Possibly s3 in the future
+]);
+
+export const fileTransfer_types = pgEnum("fileTransfer_types", [
+  "idle",
+  "queued",
+  "in progress",
+]);
+
 export const files = createTable(
   "files",
   {
@@ -43,8 +55,18 @@ export const files = createTable(
     fileType: file_types("fileType").notNull(),
     dataType: text("dataType").notNull(),
     size: integer().notNull(),
-    key: varchar("key", { length: 48 }).notNull(),
-    ufsUrl: text("ufs_url").notNull(),
+
+    ufsKey: varchar("ufs_key", { length: 48 }),
+    blobPath: varchar("blob_path"),
+    url: text("url").notNull(),
+
+    storedIn: fileStorage_types("stored_in").notNull().default("utfs"),
+    targetStorage: fileStorage_types("target_storage")
+      .notNull()
+      .default("blob"),
+    transferStatus: fileTransfer_types("transfer_status")
+      .notNull()
+      .default("idle"),
 
     isLocked: boolean("is_locked").default(false),
     password: text("password"),

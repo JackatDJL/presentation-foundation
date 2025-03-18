@@ -82,8 +82,8 @@ export default function FileView({
       setIsPasswordDialogOpen(true);
     } else {
       // Open file directly
-      if (file?.ufsUrl) {
-        window.open(file.ufsUrl, "_blank");
+      if (file?.url) {
+        window.open(file.url, "_blank");
       }
     }
   };
@@ -186,15 +186,15 @@ export default function FileView({
               variant="ghost"
               size="sm"
               onClick={() => {
-                if (file.ufsUrl) {
+                if (file.url) {
                   if (file.isLocked && !accessGranted) {
                     setIsPasswordDialogOpen(true);
                   } else {
-                    window.open(file.ufsUrl, "_blank", "download");
+                    window.open(file.url, "_blank", "download");
                   }
                 }
               }}
-              disabled={!file.ufsUrl}
+              disabled={!file.url}
             >
               <Download className="h-4 w-4" />
             </Button>

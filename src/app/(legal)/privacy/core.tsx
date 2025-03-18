@@ -17,7 +17,6 @@ import { Separator } from "~/components/ui/separator";
 import { LanguageToggle } from "~/components/language-toggle";
 import { useTheme } from "next-themes";
 
-
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },

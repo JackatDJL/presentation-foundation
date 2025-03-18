@@ -28,7 +28,7 @@ async function createFile({ input }: { input: InputData }) {
     "Server asigned UUID ",
     response?.file?.id,
     " to ",
-    response?.file?.key,
+    response?.file?.ufsKey,
   );
 
   return response;
@@ -96,16 +96,11 @@ export const UploadthingRouter = {
         fileType: "presentation",
         dataType: file.type,
         size: file.size,
-        key: file.key,
-        ufsUrl: file.ufsUrl,
-
-        isLocked: false,
+        ufsKey: file.key,
+        url: file.ufsUrl,
 
         presentationId: metadata.presentationId,
         owner: metadata.userId!,
-
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       };
 
       const response = await createFile({ input: request });
@@ -144,16 +139,12 @@ export const UploadthingRouter = {
         fileType: metadata.fileType,
         dataType: file.type,
         size: file.size,
-        key: file.key,
-        ufsUrl: file.ufsUrl,
 
-        isLocked: false,
+        ufsKey: file.key,
+        url: file.ufsUrl,
 
         presentationId: metadata.presentationId,
         owner: metadata.userId!,
-
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       };
 
       const response = await createFile({ input: request });
@@ -201,16 +192,11 @@ export const UploadthingRouter = {
         fileType: metadata.fileType,
         dataType: file.type,
         size: file.size,
-        key: file.key,
-        ufsUrl: file.ufsUrl,
-
-        isLocked: false,
+        ufsKey: file.key,
+        url: file.ufsUrl,
 
         presentationId: metadata.presentationId,
         owner: metadata.userId!,
-
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       };
 
       const response = await createFile({ input: request });

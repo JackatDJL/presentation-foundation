@@ -83,11 +83,11 @@ export async function generateMetadata(props: {
     };
   }
 
-  let cover: string | undefined = undefined;
-  if (presentation.cover) {
-    const file = await api.files.getById(presentation.cover);
-    cover = file?.ufsUrl;
-  }
+  const image = await (
+    await fetch(`/api/og/imagegen?shortname=${shortname}`, {
+      method: "GET",
+    })
+  ).text();
 
   return {
     title: `${presentation.title} - Presentation Foundation by DJL`,
@@ -101,7 +101,7 @@ export async function generateMetadata(props: {
         "View this presentation on Presentation Foundation",
       url: `https://${shortname}.pr.djl.foundation`,
       images: {
-        url: cover ?? "/img/og.png",
+        url: image,
         width: 1200,
         height: 630,
         alt: `${presentation.title} - Presentation Foundation by DJL`,
@@ -113,7 +113,7 @@ export async function generateMetadata(props: {
         presentation.description ??
         "View this presentation on Presentation Foundation",
       images: {
-        url: cover ?? "/img/og.png",
+        url: image,
         width: 1200,
         height: 630,
         alt: `${presentation.title} - Presentation Foundation by DJL`,

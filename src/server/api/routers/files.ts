@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, not, and } from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 import { db } from "~/server/db";
+import { del, put } from "@vercel/blob";
 import { files, presentations } from "~/server/db/schema";
 import { utapi } from "~/server/uploadthing";
 import * as argon2 from "argon2";
@@ -23,17 +24,11 @@ export const fileRouter = createTRPCRouter({
         ]),
         dataType: z.string(),
         size: z.number().int(),
-        key: z.string().length(48),
-        ufsUrl: z.string().url(),
-
-        isLocked: z.boolean().default(false),
-        password: z.string().optional(),
+        ufsKey: z.string().length(48),
+        url: z.string().url(),
 
         presentationId: z.string().uuid(),
         owner: z.string().length(32),
-
-        createdAt: z.string().datetime(),
-        updatedAt: z.string().datetime(),
       }),
     )
     .query(async ({ input }) => {
@@ -43,43 +38,38 @@ export const fileRouter = createTRPCRouter({
         fileType: input.fileType,
         dataType: input.dataType,
         size: input.size,
-        key: input.key,
-        ufsUrl: input.ufsUrl,
 
-        isLocked: input.isLocked,
-        password: input.password,
+        ufsKey: input.ufsKey,
+        url: input.url,
+
+        storedIn: "utfs",
+        targetStorage: "blob",
+        transferStatus: "queued",
+
+        isLocked: false,
 
         presentationId: input.presentationId,
         owner: input.owner,
 
-        createdAt: new Date(input.createdAt),
-        updatedAt: new Date(input.updatedAt),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
       // console.log("Inserting Data into Database", file);
 
-      await db.insert(files).values(file);
-
-      const response = await db
-        .select()
-        .from(files)
-        .where(eq(files.id, file.id!));
+      const response = await db.insert(files).values(file).returning();
 
       // console.log("Inserted Data into Database", response);
 
       // console.log("Configuring Presentation to point to File");
 
-      await db
+      const presentation = await db
         .update(presentations)
         .set({
           [input.fileType]: response[0]?.id,
-          updatedAt: new Date(input.updatedAt),
+          updatedAt: new Date(),
         })
-        .where(eq(presentations.id, input.presentationId));
-
-      const presentation = await db
-        .select()
-        .from(presentations)
-        .where(eq(presentations.id, input.presentationId));
+        .where(eq(presentations.id, input.presentationId))
+        .returning();
 
       // console.log("Updated Presentation", presentation);
 
@@ -98,18 +88,45 @@ export const fileRouter = createTRPCRouter({
     .input(z.string().uuid())
     .mutation(async ({ input }) => {
       // Check if the file exists
-      const filles = await db.select().from(files).where(eq(files.id, input));
+      let filles = await db.select().from(files).where(eq(files.id, input));
       const file = filles[0];
 
-      if (!file) {
-        throw new Error("File not found");
+      if (!file || file.transferStatus === "in progress") {
+        throw new Error("File not found or currently Trancending Servers");
+      }
+      // Immediatly remove the file from the queue so that the file doesnt get lost trancending servers
+      if (file.transferStatus === "queued") {
+        filles = await db
+          .update(files)
+          .set({
+            targetStorage: file.storedIn,
+            transferStatus: "idle",
+          })
+          .where(eq(files.id, input))
+          .returning();
       }
       // Get the presentationId and the filetype
 
-      // Delete the file from uploadthing
-      const deletionResponse = await utapi.deleteFiles(file.key);
-      if (!deletionResponse.success || deletionResponse.deletedCount !== 1) {
-        throw new Error("Failed to delete file");
+      // Delete the file from the corresponding service
+      switch (file.storedIn) {
+        case "utfs":
+          if (!file.ufsKey) {
+            throw new Error("No Key Provided");
+          }
+          const deletionResponse = await utapi.deleteFiles(file.ufsKey);
+          if (
+            !deletionResponse.success ||
+            deletionResponse.deletedCount !== 1
+          ) {
+            throw new Error("Failed to delete file");
+          }
+          break;
+        case "blob":
+          if (!file.blobPath) {
+            throw new Error("No Path Provided");
+          }
+          await del(file.blobPath);
+          break;
       }
 
       // Update the presentation to remove the file
@@ -342,4 +359,178 @@ export const fileRouter = createTRPCRouter({
         message: match ? "Password verified" : "Incorrect password",
       };
     }),
+  transfers: createTRPCRouter({
+    run: publicProcedure.mutation(async () => {
+      // First set all the files wo are idle and storedIn !== targetStorage to queued
+      // This will probably only be called if i manually move around files between storage services
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      await db
+        .update(files)
+        .set({
+          transferStatus: "queued",
+        })
+        .where(
+          and(
+            eq(files.transferStatus, "idle"),
+            not(eq(files.storedIn, files.targetStorage)),
+          ),
+        );
+
+      await db
+        .update(files)
+        .set({
+          transferStatus: "idle",
+        })
+        .where(
+          and(
+            not(eq(files.transferStatus, "idle")),
+            eq(files.storedIn, files.targetStorage),
+          ),
+        );
+
+      // Then get all to be transferred files
+      const filesToTransfer = await db
+        .select()
+        .from(files)
+        .where(eq(files.transferStatus, "queued"));
+
+      // For each file, transfer it
+      for (const file of filesToTransfer) {
+        // Set Status
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const updatestatus = await db
+          .update(files)
+          .set({
+            transferStatus: "in progress",
+          })
+          .where(eq(files.id, file.id));
+
+        const blob = await fetch(file.url).then((res) => res.blob());
+
+        if (blob.size !== file.size) {
+          console.warn(
+            "Blob is Corrupted (Or Cloudflare making issues again), Aborting transfer",
+          );
+          await db
+            .update(files)
+            .set({
+              transferStatus: "idle",
+            })
+            .where(eq(files.id, file.id));
+          continue;
+        }
+
+        let up_success = false;
+        // Transfer
+        switch (file.targetStorage) {
+          case "utfs":
+            try {
+              const up_utfs_response = await utapi.uploadFilesFromUrl(file.url);
+
+              await db
+                .update(files)
+                .set({
+                  ufsKey: up_utfs_response.data?.ufsUrl,
+                  url: up_utfs_response.data?.ufsUrl,
+                })
+                .where(eq(files.id, file.id));
+            } catch (error) {
+              console.error(error);
+            } finally {
+              up_success = true;
+            }
+            break;
+          case "blob":
+            try {
+              const up_blob_response = await put(
+                `${process.env.NODE_ENV}/${file.owner}/${file.name}`,
+                blob,
+                {
+                  access: "public",
+                },
+              );
+              await db
+                .update(files)
+                .set({
+                  blobPath: up_blob_response.pathname,
+                  url: up_blob_response.url,
+                })
+                .where(eq(files.id, file.id));
+            } catch (error) {
+              console.error(error);
+            } finally {
+              up_success = true;
+            }
+            break;
+        }
+
+        if (!up_success) {
+          throw new Error("Failed to transfer file");
+        }
+
+        // Delete old file
+        let del_success = false;
+        switch (file.storedIn) {
+          case "utfs":
+            try {
+              if (!file.ufsKey) {
+                throw new Error("No Key Provided");
+              }
+              const del_utfs_response = await utapi.deleteFiles(file.ufsKey);
+              if (
+                !del_utfs_response.success ||
+                del_utfs_response.deletedCount !== 1
+              ) {
+                throw new Error("Failed to delete file");
+              }
+
+              await db
+                .update(files)
+                .set({
+                  ufsKey: null,
+                })
+                .where(eq(files.id, file.id));
+            } catch (error) {
+              console.error(error);
+            } finally {
+              del_success = true;
+            }
+            break;
+          case "blob":
+            try {
+              if (!file.blobPath) {
+                throw new Error("No Path Provided");
+              }
+              await del(file.blobPath);
+
+              await db
+                .update(files)
+                .set({
+                  blobPath: null,
+                })
+                .where(eq(files.id, file.id));
+            } catch (error) {
+              console.error(error);
+            } finally {
+              del_success = true;
+            }
+            break;
+        }
+
+        if (!del_success) {
+          throw new Error("Failed to delete file");
+        }
+
+        // Set Status and storage
+        await db
+          .update(files)
+          .set({
+            storedIn: file.targetStorage,
+            transferStatus: "idle",
+          })
+          .where(eq(files.id, file.id));
+      }
+    }),
+  }),
 });

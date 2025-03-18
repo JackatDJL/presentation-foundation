@@ -13,6 +13,10 @@ const config = {
         hostname: "848t5ajmid.ufs.sh",
         pathname: "/f/*",
       },
+      {
+        protocol: "https",
+        hostname: "arvdoawqez6yhriu.public.blob.vercel-storage.com",
+      },
     ],
   },
 };
