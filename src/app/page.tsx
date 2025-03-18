@@ -7,6 +7,7 @@ import ViewPresentation from "~/components/view-presentation";
 import { notFound } from "next/navigation";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Home from "~/components/home";
+import { files } from "~/server/db/schema";
 
 interface SearchParams {
   dev?: string;
@@ -83,11 +84,17 @@ export async function generateMetadata(props: {
     };
   }
 
-  const image = await (
-    await fetch(`/api/og/imagegen?shortname=${shortname}`, {
-      method: "GET",
-    })
-  ).text();
+  // const image = await (
+  //   await fetch(`/api/og/imagegen?shortname=${shortname}`, {
+  //     method: "GET",
+  //   })
+  // ).text();
+
+  let cover: string | undefined = undefined;
+  if (presentation.cover) {
+    const file = await api.files.getById(presentation.cover);
+    cover = file?.url;
+  }
 
   return {
     title: `${presentation.title} - Presentation Foundation by DJL`,
@@ -101,7 +108,8 @@ export async function generateMetadata(props: {
         "View this presentation on Presentation Foundation",
       url: `https://${shortname}.pr.djl.foundation`,
       images: {
-        url: image,
+        // url: image,
+        url: cover ?? "/img/og.png",
         width: 1200,
         height: 630,
         alt: `${presentation.title} - Presentation Foundation by DJL`,
@@ -113,7 +121,8 @@ export async function generateMetadata(props: {
         presentation.description ??
         "View this presentation on Presentation Foundation",
       images: {
-        url: image,
+        url: cover ?? "/img/og.png",
+        // url: image,
         width: 1200,
         height: 630,
         alt: `${presentation.title} - Presentation Foundation by DJL`,
