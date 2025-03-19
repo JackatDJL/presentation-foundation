@@ -7,7 +7,6 @@ import ViewPresentation from "~/components/view-presentation";
 import { notFound } from "next/navigation";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Home from "~/components/home";
-import { files } from "~/server/db/schema";
 
 interface SearchParams {
   dev?: string;

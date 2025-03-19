@@ -431,7 +431,7 @@ export const fileRouter = createTRPCRouter({
               await db
                 .update(files)
                 .set({
-                  ufsKey: up_utfs_response.data?.ufsUrl,
+                  ufsKey: up_utfs_response.data?.key,
                   url: up_utfs_response.data?.ufsUrl,
                 })
                 .where(eq(files.id, file.id));
@@ -444,7 +444,7 @@ export const fileRouter = createTRPCRouter({
           case "blob":
             try {
               const up_blob_response = await put(
-                `${process.env.NODE_ENV}/${file.owner}/${file.name}`,
+                `pr/${process.env.NODE_ENV}/${file.owner}/${file.name}`,
                 blob,
                 {
                   access: "public",
