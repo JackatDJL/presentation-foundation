@@ -190,3 +190,5 @@ export async function getHomeHref(searchParams: SearchParams): Promise<string> {
     return "https://pr.djl.foundation/";
   }
 }
+
+export const forbiddenShortnames = ["auth", "clerk", "api", "www", "analytics"];

@@ -9,6 +9,7 @@ import { utapi } from "~/server/uploadthing";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { presentations, files } from "~/server/db/schema";
 import { del } from "@vercel/blob";
+import { forbiddenShortnames } from "~/components/shortname-routing";
 
 export const presentationRouter = createTRPCRouter({
   create: publicProcedure
@@ -63,12 +64,14 @@ export const presentationRouter = createTRPCRouter({
   checkAvailability: publicProcedure
     .input(z.string())
     .query(async ({ input }) => {
-      console.log("test");
       const isAvailable = await db
         .select()
         .from(presentations)
         .where(eq(presentations.shortname, input));
 
+      if (forbiddenShortnames.includes(input)) {
+        return false;
+      }
       return isAvailable.length === 0;
     }),
 
