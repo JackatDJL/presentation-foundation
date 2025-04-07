@@ -38,7 +38,7 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { toast } from "sonner";
-import type { SearchParams } from "~/components/shortname-routing";
+import type { SearchParams } from "~/components/shortname-routing-utility";
 import { AsyncViewLink } from "~/components/asyncLink";
 import { motion } from "motion/react";
 

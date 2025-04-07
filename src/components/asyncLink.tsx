@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getViewHref, getHomeHref } from "~/components/shortname-routing";
-import type { SearchParams } from "~/components/shortname-routing";
+import type { SearchParams } from "~/components/shortname-routing-utility";
 import { Loader } from "react-feather";
 
 interface AsyncViewLinkProps {

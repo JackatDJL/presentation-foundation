@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { SearchParams } from "./shortname-routing-utility";
+import type { SearchParams } from "./shortname-routing-utility";
 
 /**
  * Determines if the current environment is in development mode
