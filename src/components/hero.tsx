@@ -23,6 +23,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import GradientImage from "./gradient-image";
+import Link from "next/link";
 
 // Create animated versions of shadcn components
 const MotionCard = motion.create(Card);
@@ -388,6 +389,27 @@ export default function Hero() {
           </Card>
         </section>
       </SignedOut>
+
+      <section className="py-8">
+        <Card className="bg-transparent border-none shadow-none text-center text-sm text-muted-foreground dark:text-slate-400">
+          <CardContent className="p-4">
+            <Link
+              href="/terms"
+              prefetch
+              className="hover:text-foreground dark:hover:text-slate-100 transition-colors mr-4"
+            >
+              Terms of Service
+            </Link>
+            <Link
+              href="/privacy"
+              prefetch
+              className="hover:text-foreground dark:hover:text-slate-100 transition-colors"
+            >
+              Privacy Policy
+            </Link>
+          </CardContent>
+        </Card>
+      </section>
     </main>
   );
 }

@@ -9,7 +9,7 @@ import { utapi } from "~/server/uploadthing";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { presentations, files } from "~/server/db/schema";
 import { del } from "@vercel/blob";
-import { forbiddenShortnames } from "~/components/shortname-routing";
+import { forbiddenShortnames } from "~/components/shortname-routing-utility";
 
 export const presentationRouter = createTRPCRouter({
   create: publicProcedure

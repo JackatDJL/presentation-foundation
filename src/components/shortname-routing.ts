@@ -2,12 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-
-export interface SearchParams {
-  dev?: string;
-  shortname?: string;
-  [key: string]: string | string[] | undefined;
-}
+import { SearchParams } from "./shortname-routing-utility";
 
 /**
  * Determines if the current environment is in development mode
@@ -190,5 +185,3 @@ export async function getHomeHref(searchParams: SearchParams): Promise<string> {
     return "https://pr.djl.foundation/";
   }
 }
-
-export const forbiddenShortnames = ["auth", "clerk", "api", "www", "analytics"];
