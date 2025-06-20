@@ -1,0 +1,9 @@
+onlyBuiltDependencies:
+  - '@clerk/shared'
+  - '@sentry/cli'
+  - '@vercel/speed-insights'
+  - argon2
+  - esbuild
+  - msgpackr-extract
+  - sharp
+  - unrs-resolver
