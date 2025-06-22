@@ -3,13 +3,11 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 import { db } from "~/server/db";
-import { eq } from "drizzle-orm";
 import { utapi } from "~/server/uploadthing";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { presentations, files } from "~/server/db/schema";
 import { del } from "@vercel/blob";
 import { forbiddenShortnames } from "~/components/shortname-routing-utility";
+import { type Prisma } from "@prisma/client";
 
 export const presentationRouter = createTRPCRouter({
   create: publicProcedure
@@ -33,7 +31,7 @@ export const presentationRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      const presentation: typeof presentations.$inferInsert = {
+      const presentation: Prisma.presentationsCreateInput = {
         id: crypto.randomUUID(),
         shortname: input.shortname,
         title: input.title,
@@ -51,23 +49,19 @@ export const presentationRouter = createTRPCRouter({
         updatedAt: new Date(input.updatedAt),
       };
 
-      const response = await db
-        .insert(presentations)
-        .values(presentation)
-        .returning();
-
-      // console.log("Inserted Data into Database", response);
-
-      return response;
+      return await db.presentations.create({
+        data: presentation,
+      });
     }),
 
   checkAvailability: publicProcedure
     .input(z.string())
     .query(async ({ input }) => {
-      const isAvailable = await db
-        .select()
-        .from(presentations)
-        .where(eq(presentations.shortname, input));
+      const isAvailable = await db.presentations.findMany({
+        where: {
+          shortname: input,
+        },
+      });
 
       if (forbiddenShortnames.includes(input)) {
         return false;
@@ -76,32 +70,36 @@ export const presentationRouter = createTRPCRouter({
     }),
 
   getByShortname: publicProcedure.input(z.string()).query(async ({ input }) => {
-    const presentation = await db
-      .select()
-      .from(presentations)
-      .where(eq(presentations.shortname, input));
-
-    return presentation[0];
+    return await db.presentations.findFirst({
+      where: {
+        shortname: input,
+      },
+      include: {
+        files: true,
+      },
+    });
   }),
 
   getIdByShortname: publicProcedure
     .input(z.string().max(25))
     .query(async ({ input }) => {
-      const presentation = await db
-        .select()
-        .from(presentations)
-        .where(eq(presentations.shortname, input));
-
-      return presentation[0]?.id;
+      const response = await db.presentations.findFirst({
+        where: {
+          shortname: input,
+        },
+      });
+      return response?.id;
     }),
 
   getById: publicProcedure.input(z.string().uuid()).query(async ({ input }) => {
-    const presentation = await db
-      .select()
-      .from(presentations)
-      .where(eq(presentations.id, input));
-
-    return presentation[0];
+    return await db.presentations.findFirst({
+      where: {
+        id: input,
+      },
+      include: {
+        files: true,
+      },
+    });
   }),
 
   edit: publicProcedure
@@ -124,9 +122,11 @@ export const presentationRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      const presentation = await db
-        .update(presentations)
-        .set({
+      const presentation = await db.presentations.update({
+        where: {
+          id: input.id,
+        },
+        data: {
           shortname: input.shortname,
           title: input.title,
           description: input.description,
@@ -139,9 +139,8 @@ export const presentationRouter = createTRPCRouter({
           visibility: input.visibility,
 
           updatedAt: new Date(input.updatedAt),
-        })
-        .where(eq(presentations.id, input.id))
-        .returning();
+        },
+      });
 
       return presentation;
     }),
@@ -149,59 +148,31 @@ export const presentationRouter = createTRPCRouter({
   deleteById: publicProcedure
     .input(z.string().uuid())
     .mutation(async ({ input }) => {
-      // console.log("Pulling data from database");
-      const presentation = await db
-        .select()
-        .from(presentations)
-        .where(eq(presentations.id, input));
+      const presentation = await db.presentations.findUnique({
+        where: { id: input },
+      });
 
-      // console.log("Data Pulled from database", presentation);
-      if (!presentation[0]) {
+      if (!presentation) {
         throw new Error("Presentation not found");
       }
-      const keys = [
-        "logo",
-        "cover",
-        "presentation",
-        "handout",
-        "research",
-      ] as Array<keyof (typeof presentation)[0]>;
-      const presentationItem = presentation[0];
-      const filesArray = keys
-        .map((key) => presentationItem[key])
-        .filter((fileId): fileId is string => fileId !== null && fileId !== "");
-      // console.log("Files Array", filesArray);
 
-      for (const fileId of filesArray) {
-        if (!fileId) {
-          throw new Error("No File ID Provided");
-        }
-        let file = (
-          await db.select().from(files).where(eq(files.id, fileId))
-        )[0];
+      const fileKeys = [
+        presentation.logoId,
+        presentation.coverId,
+        presentation.presentationId,
+        presentation.handoutId,
+        presentation.researchId,
+      ].filter((key): key is string => key !== null);
+
+      for (const fileKey of fileKeys) {
+        const file = await db.files.findUnique({
+          where: { id: fileKey },
+        });
+
         if (!file) {
           throw new Error("File not found");
         }
-        // Immediatly remove the file from the queue so that the file doesnt get lost trancending servers
-        if (file.transferStatus === "queued") {
-          file = (
-            await db
-              .update(files)
-              .set({
-                targetStorage: file.storedIn,
-                transferStatus: "idle",
-              })
-              .where(eq(files.id, input))
-              .returning()
-          )[0];
 
-          if (!file) {
-            throw new Error("File not found");
-          }
-        }
-        // Get the presentationId and the filetype
-
-        // Delete the file from the corresponding service
         switch (file.storedIn) {
           case "utfs":
             if (!file.ufsKey) {
@@ -223,35 +194,14 @@ export const presentationRouter = createTRPCRouter({
             break;
         }
 
-        // Update the presentation to remove the file
-
-        const dbPrResponse = await db
-          .update(presentations)
-          .set({
-            [file.fileType]: null,
-          })
-          .where(eq(presentations.id, file.presentationId))
-          .returning();
-
-        if (
-          dbPrResponse[0]?.[file.fileType] !== null ||
-          dbPrResponse.length !== 1
-        ) {
-          throw new Error("Failed to update presentation");
-        }
-
-        // Delete the file from the db
-        const dbFileResponse = await db
-          .delete(files)
-          .where(eq(files.id, input))
-          .returning();
-        if (dbFileResponse.length !== 1) {
-          throw new Error("Failed to delete file");
-        }
+        await db.files.delete({
+          where: { id: file.id },
+        });
       }
 
-      await db.delete(presentations).where(eq(presentations.id, input));
-      // console.log("Deleted Presentation");
+      await db.presentations.delete({
+        where: { id: input },
+      });
 
       return;
     }),

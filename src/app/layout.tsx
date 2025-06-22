@@ -9,9 +9,6 @@ import { ThemeProvider } from "~/components/theme-provider";
 
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-
 import { TRPCReactProvider } from "~/trpc/react";
 
 import { ClerkProvider } from "@clerk/nextjs";
@@ -102,8 +99,6 @@ export default function RootLayout({
     >
       <html lang="en" className={`${GeistSans.variable}`}>
         <body>
-          <Analytics />
-          <SpeedInsights />
           <TRPCReactProvider>
             <NextSSRPlugin
               routerConfig={extractRouterConfig(UploadthingRouter)}

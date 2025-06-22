@@ -1,9 +1,12 @@
 onlyBuiltDependencies:
   - '@clerk/shared'
+  - '@prisma/client'
+  - '@prisma/engines'
   - '@sentry/cli'
   - '@vercel/speed-insights'
   - argon2
   - esbuild
   - msgpackr-extract
+  - prisma
   - sharp
   - unrs-resolver

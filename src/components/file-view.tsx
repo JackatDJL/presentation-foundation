@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { FileText, Lock, Download, Eye } from "react-feather";
 import {
   Card,

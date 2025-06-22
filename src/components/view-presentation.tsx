@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Loader } from "react-feather";
 import Image from "next/image";
 import {

@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, useInView } from "framer-motion";
+import { motion, AnimatePresence, useInView } from "motion/react";
 import { SignedOut, Waitlist } from "@clerk/nextjs";
 import {
   Clock,
