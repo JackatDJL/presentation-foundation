@@ -32,11 +32,6 @@ type analyseRequestType = {
   type: "root" | "org" | "";
 };
 
-// pr.djl.foundation = root
-// orgname.pr.djl.foundation = org
-// pr.djl.foundation/!shortname = shortname
-//
-
 /**
  * Analyzes an incoming request and extracts application-state-specific information.
  * @param request - A NextRequest object to analyze.

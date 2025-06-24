@@ -5,6 +5,20 @@ import {
 } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+// Future Routing Structure
+// Based on example routes
+// example-org
+// example-user
+
+// oh villeicht kauf ich mir pr-fnd.de oder so weil ist kürzer als pr.djl.foundation
+
+// pr.djl.foundation = root (intelligent routing for hero / home)
+// pr.djl.foundation/{example-user}/{shortname} = presentation view for presentation "shortname" - Free Tier
+// pr.djl.foundation/!{shortname} = presentation view for presentation "shortname" - Pro Tier
+// pr.djl.foundation/{example-user} = user profile w/public presentations - intelligent routing (e.g. if auth().user == example-user redirect to /)
+// example-org.pr.djl.foundation = organisation profile (if wanted) (intelligent routing for profile / org home)
+// example-org.pr.djl.foundation/{shortname} = organisation presentation view for presentation "shortname"
+
 const isExternalAuthRoutes = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
