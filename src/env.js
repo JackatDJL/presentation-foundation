@@ -25,6 +25,9 @@ export const env = createEnv({
     DB_READ2_PGHOST: z.string(),
     DB_READ2_PGPASSWORD: z.string(),
     DB_READ2_PGUSER: z.string(),
+    POLAR_ACCESS_TOKEN: z.string(),
+    POLAR_SUCCESS_URL: z.string().url(),
+    POLAR_WEBHOOK_SECRET: z.string(),
   },
   client: {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
@@ -50,6 +53,10 @@ export const env = createEnv({
     DB_READ2_PGHOST: process.env.DB_READ2_PGHOST,
     DB_READ2_PGPASSWORD: process.env.DB_READ2_PGPASSWORD,
     DB_READ2_PGUSER: process.env.DB_READ2_PGUSER,
+
+    POLAR_ACCESS_TOKEN: process.env.POLAR_ACCESS_TOKEN,
+    POLAR_SUCCESS_URL: process.env.POLAR_SUCCESS_URL,
+    POLAR_WEBHOOK_SECRET: process.env.POLAR_WEBHOOK_SECRET,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,

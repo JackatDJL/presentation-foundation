@@ -7,6 +7,11 @@
     <a href="https://pr.djl.foundation"><strong>pr.djl.foundation »</strong></a>
   </p>
 </div>
+<div align="center">
+  This branch is dedicated to testing <a href="https://polar.sh"><b>Polar.sh</b></a> as a payment solution for the Presentation Foundation. 
+  <br />
+  For more details, please refer to the <a href="./POLAR-REVIEW.md"><b>review document</b></a>.
+</div>
 
 <br/>
 
