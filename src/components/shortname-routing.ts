@@ -6,7 +6,7 @@ import {
   forbiddenShortnames,
   type SearchParams,
 } from "./shortname-routing-utility";
-import { env } from "~/env";
+import env from "~/env";
 import { type NextRequest } from "next/server";
 
 /**
@@ -93,16 +93,22 @@ async function analyseRequest({
   if (env.NODE_ENV === "development" || params.get("dev") === "true") {
     // Dev Case
     return {
-      isSubdomain: params.get("shortname") !== null,
+      state: {
+        isSubdomain: params.get("shortname") !== null,
+        isDev: true,
+      },
       shortname: params.get("shortname"),
-      isDev: true,
+      type: "root", // Assuming "root" for dev mode if shortname is null
     };
   } else if (!headersObject.host?.endsWith(".pr.djl.foundation")) {
     // Host Case
     return {
-      isSubdomain: false,
+      state: {
+        isSubdomain: false,
+        isDev: false,
+      },
       shortname: null,
-      isDev: false,
+      type: "root",
     };
   } else {
     // Subdomain Case
@@ -110,24 +116,33 @@ async function analyseRequest({
     if (!hostHeader) {
       // Sollte auch Host sein, aber vlt middleware fehler
       return {
-        isSubdomain: false,
+        state: {
+          isSubdomain: false,
+          isDev: false,
+        },
         shortname: null,
-        isDev: false,
+        type: "root",
       };
     }
 
     const subdomain = hostHeader.split(".")[0];
     if (!subdomain || subdomain in forbiddenShortnames) {
       return {
-        isSubdomain: false,
+        state: {
+          isSubdomain: false,
+          isDev: false,
+        },
         shortname: null,
-        isDev: false,
+        type: "root", // Assuming root if subdomain is forbidden
       };
     }
     return {
-      isSubdomain: true,
+      state: {
+        isSubdomain: true,
+        isDev: false,
+      },
       shortname: subdomain,
-      isDev: false,
+      type: "org",
     };
   }
 }
@@ -159,7 +174,7 @@ async function isRootDomain({
   searchParams?: SearchParams;
   request?: NextRequest;
 }): Promise<boolean> {
-  const { isSubdomain } = await analyseRequest({
+  const { state: { isSubdomain } } = await analyseRequest({
     searchParams,
     request,
   });

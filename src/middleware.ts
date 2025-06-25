@@ -1,9 +1,5 @@
-import {
-  clerkMiddleware,
-  createRouteMatcher,
-  currentUser,
-} from "@clerk/nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
+import { clerkMiddleware, createRouteMatcher, currentUser } from "@clerk/nextjs/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 // Future Routing Structure
 // Based on example routes
@@ -19,26 +15,40 @@ import { NextRequest, NextResponse } from "next/server";
 // example-org.pr.djl.foundation = organisation profile (if wanted) (intelligent routing for profile / org home)
 // example-org.pr.djl.foundation/{shortname} = organisation presentation view for presentation "shortname"
 
-const isExternalAuthRoutes = createRouteMatcher([
+const isAuth = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/pricing(.*)",
   "/waitlist(.*)",
-]);
-const isInternalRoutes = createRouteMatcher([
   "/profile(.*)",
+]);
+const isManagement = createRouteMatcher([
   "/manage(.*)",
   "/edit/(.*)",
   "/create/(.*)",
 ]);
+// Free Tier is /(username *)/(shortname *)
+const isFreeTier = createRouteMatcher(["/([^/]+)/([^/]+)"]);
+// Pro Tier is /!(shortname *)
+const isProTier = createRouteMatcher(["/!([^/]+)"]);
+
+function isOrg(req: NextRequest) {
+  const { hostname } = req.nextUrl;
+  return hostname.includes(".pr.djl.foundation");
+}
+
+
+
+// returns "user-profile" | "presentation-view" | "org-profile" | "hero" | "home"
+
 
 const isRootRoute = createRouteMatcher(["/"]);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isExternalAuthRoutes(req)) {
+  if (isAuth(req)) {
     return NextResponse.redirect(new URL("/", req.url));
   }
-  if (isInternalRoutes(req)) {
+  if (isManagement(req)) {
     await auth.protect();
   }
   if (isRootRoute(req)) {

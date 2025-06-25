@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { env } from "~/env";
+import env from "#env";
 import { api } from "~/trpc/server";
 import Hero from "~/components/hero";
 import ViewPresentation from "~/components/view-presentation";

@@ -26,11 +26,33 @@ const config: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/.well-known/:path*",
+        destination: "/api/2well2know/:path*",
+      },
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://eu-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://eu.i.posthog.com/:path*",
+      },
+      {
+        source: "/ingest/decide",
+        destination: "https://eu.i.posthog.com/decide",
+      },
+    ];
+  },
+  // This is required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
 };
 
 import { withSentryConfig } from "@sentry/nextjs";
 
-export default withSentryConfig(config, {
+const sentryconfig = withSentryConfig(config, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
@@ -66,3 +88,7 @@ export default withSentryConfig(config, {
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
 });
+
+import withVercelToolbar from "@vercel/toolbar/plugins/next";
+
+export default withVercelToolbar()(sentryconfig);

@@ -1,3 +1,4 @@
+import { VercelToolbar } from "@vercel/toolbar/next";
 import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
@@ -16,6 +17,9 @@ import { extractRouterConfig } from "uploadthing/server";
 import { UploadthingRouter } from "./api/uploadthing/core";
 import { Toaster } from "~/components/ui/sonner";
 import { dark } from "@clerk/themes";
+import Script from "next/script";
+import { PostHogProvider } from "~/server/providers";
+import env from "~/env";
 
 // Implement Metadata Images TODO
 export const metadata: Metadata = {
@@ -91,34 +95,44 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const shouldShowVercelToolbar = env.NODE_ENV === "development";
+
   return (
-    <ClerkProvider
-      appearance={{
-        baseTheme: dark,
-      }}
-    >
-      <html lang="en" className={`${GeistSans.variable}`}>
-        <body>
+    <html lang="en">
+      <Script
+        strategy="lazyOnload"
+        crossOrigin="anonymous"
+        src="//unpkg.com/react-scan/dist/auto.global.js"
+      />
+      <body className={`${GeistSans.variable} antialiased`}>
+        <ClerkProvider
+          appearance={{
+            baseTheme: dark,
+          }}
+        >
           <TRPCReactProvider>
-            <NextSSRPlugin
-              routerConfig={extractRouterConfig(UploadthingRouter)}
-            />
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <Toaster />
-              <div className="min-h-screen flex flex-col bg-background text-foreground">
-                <Header />
-                <main className="flex-grow">{children}</main>
-                <Footer />
-              </div>
-            </ThemeProvider>
+            <PostHogProvider>
+              <NextSSRPlugin
+                routerConfig={extractRouterConfig(UploadthingRouter)}
+              />
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                <Toaster />
+                <div className="min-h-screen flex flex-col bg-background text-foreground">
+                  <Header />
+                  <main className="grow">{children}</main>
+                  <Footer />
+                </div>
+              </ThemeProvider>
+              {shouldShowVercelToolbar && <VercelToolbar />}
+            </PostHogProvider>
           </TRPCReactProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

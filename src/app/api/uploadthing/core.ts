@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/only-throw-error */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import { api } from "~/trpc/server";
@@ -21,7 +21,7 @@ async function createFile({ input }: { input: InputData }) {
     response = await api.files.create(input);
   } catch (error) {
     console.error("Error creating file:", error);
-    throw error;
+    throw new Error(`Error creating file: ${error instanceof Error ? error.message : String(error)}`);
   }
   console.log(
     "Server asigned UUID ",
