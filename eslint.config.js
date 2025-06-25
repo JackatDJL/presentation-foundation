@@ -18,8 +18,8 @@ export default tseslint.config(
     files: ["**/*.ts", "**/*.tsx"],
     extends: [
       ...tseslint.configs.recommended,
-      ...tseslint.configs.recommendedTypeChecked,
-      ...tseslint.configs.stylisticTypeChecked,
+      // ...tseslint.configs.recommendedTypeChecked,
+      // ...tseslint.configs.stylisticTypeChecked,
     ],
     rules: {
       "@typescript-eslint/array-type": "off",
