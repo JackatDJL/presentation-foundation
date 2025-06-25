@@ -6,7 +6,7 @@
   "scripts": {
     "build": "next build --turbo",
     "check": "next lint && tsc --noEmit",
-    "db:generate": "prisma migrate dev",
+    "db:migrate:dev": "prisma migrate dev",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
@@ -63,7 +63,6 @@
     "@trpc/client": "^11.4.2",
     "@trpc/react-query": "^11.4.2",
     "@trpc/server": "^11.4.2",
-    "@types/bcrypt": "^5.0.2",
     "@uploadthing/react": "^7.3.2",
     "@vercel/blob": "^1.1.1",
     "argon2": "^0.43.0",
@@ -74,6 +73,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "embla-carousel-react": "8.6.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "geist": "^1.4.2",
     "import-in-the-middle": "^1.14.2",
     "input-otp": "1.4.2",
@@ -102,6 +102,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
     "@types/eslint": "^9.6.1",
     "@types/node": "^24.0.4",
     "@types/react": "^19.1.8",
@@ -110,11 +111,11 @@
     "@typescript-eslint/parser": "^8.35.0",
     "eslint": "^9.29.0",
     "eslint-config-next": "^15.3.4",
-    "eslint-plugin-drizzle": "^0.2.3",
     "postcss": "^8.5.6",
     "prettier": "^3.6.1",
     "prettier-plugin-tailwindcss": "^0.6.13",
     "tailwindcss": "^3.4.17",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "ct3aMetadata": {

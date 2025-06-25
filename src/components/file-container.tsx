@@ -1,8 +1,4 @@
 /* eslint-disable @next/next/no-img-element */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 "use client";
 import { Button } from "~/components/ui/button";
 import { UploadButton } from "./uploadthing";
@@ -18,7 +14,11 @@ import {
 } from "~/components/ui/alert-dialog";
 import { Input } from "~/components/ui/input";
 import { useState, useEffect } from "react";
-import { files, presentations, type file_types } from "@prisma/client";
+import {
+  type files,
+  type presentations,
+  type file_types,
+} from "@prisma/client";
 
 type FileType = file_types;
 

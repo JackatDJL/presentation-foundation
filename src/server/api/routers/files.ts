@@ -114,24 +114,7 @@ export const fileRouter = createTRPCRouter({
 
       // Delete the file from the corresponding service
       switch (file.storedIn) {
-        case "utfs":
-          if (!file.ufsKey) {
-            throw new Error("No Key Provided");
-          }
-          file = await db.files.update({
-            where: {
-              id: input,
-            },
-            data: {
-              targetStorage: file.storedIn,
-              transferStatus: "idle",
-            },
-          });
-      }
-
-      // Delete the file from the corresponding service
-      switch (file.storedIn) {
-        case "utfs":
+        case "utfs": {
           if (!file.ufsKey) {
             throw new Error("No Key Provided");
           }
@@ -143,12 +126,14 @@ export const fileRouter = createTRPCRouter({
             throw new Error("Failed to delete file");
           }
           break;
-        case "blob":
+        }
+        case "blob": {
           if (!file.blobPath) {
             throw new Error("No Path Provided");
           }
           await del(file.blobPath);
           break;
+        }
       }
 
       // Update the presentation to remove the file
@@ -464,10 +449,9 @@ export const fileRouter = createTRPCRouter({
                   url: up_utfs_response.data?.ufsUrl,
                 },
               });
+              up_success = true;
             } catch (error) {
               console.error(error);
-            } finally {
-              up_success = true;
             }
             break;
           case "blob":
@@ -488,10 +472,9 @@ export const fileRouter = createTRPCRouter({
                   url: up_blob_response.url,
                 },
               });
+              up_success = true;
             } catch (error) {
               console.error(error);
-            } finally {
-              up_success = true;
             }
             break;
         }
@@ -524,10 +507,9 @@ export const fileRouter = createTRPCRouter({
                   ufsKey: null,
                 },
               });
+              del_success = true;
             } catch (error) {
               console.error(error);
-            } finally {
-              del_success = true;
             }
             break;
           case "blob":
@@ -545,10 +527,9 @@ export const fileRouter = createTRPCRouter({
                   blobPath: null,
                 },
               });
+              del_success = true;
             } catch (error) {
               console.error(error);
-            } finally {
-              del_success = true;
             }
             break;
         }
