@@ -8,7 +8,6 @@ import { Button } from "~/components/ui/button";
 import { UploadButton } from "./uploadthing";
 import { api } from "~/trpc/react";
 import { Loader, Trash2, Lock, Unlock } from "react-feather";
-import type { files, presentations } from "~/server/db/schema";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -19,8 +18,9 @@ import {
 } from "~/components/ui/alert-dialog";
 import { Input } from "~/components/ui/input";
 import { useState, useEffect } from "react";
+import { files, presentations, type file_types } from "@prisma/client";
 
-type FileType = "presentation" | "handout" | "research" | "logo" | "cover";
+type FileType = file_types;
 
 interface FileContainerProps {
   presentationId?: string;
@@ -575,13 +575,7 @@ export default function FileContainer({
 }
 
 // Helper component to display file preview
-function FilePreview({
-  file,
-  fileType,
-}: {
-  file: typeof files.$inferSelect;
-  fileType: FileType;
-}) {
+function FilePreview({ file, fileType }: { file: files; fileType: FileType }) {
   const isImage = fileType === "logo" || fileType === "cover";
 
   if (isImage && file.url) {
@@ -767,20 +761,20 @@ function FileIcon({ fileExtension }: { fileExtension?: string }) {
 
 // Helper functions
 function getFileIdByType(
-  presentation: typeof presentations.$inferSelect,
+  presentation: presentations,
   fileType: FileType,
 ): string | undefined {
   switch (fileType) {
     case "logo":
-      return presentation.logo ?? undefined;
+      return presentation.logoId ?? undefined;
     case "cover":
-      return presentation.cover ?? undefined;
+      return presentation.coverId ?? undefined;
     case "presentation":
-      return presentation.presentation ?? undefined;
+      return presentation.presentationId ?? undefined;
     case "handout":
-      return presentation.handout ?? undefined;
+      return presentation.handoutId ?? undefined;
     case "research":
-      return presentation.research ?? undefined;
+      return presentation.researchId ?? undefined;
     default:
       return undefined;
   }

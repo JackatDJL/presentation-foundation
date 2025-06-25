@@ -9,7 +9,7 @@ import type { AppRouter } from "~/server/api/root";
 import { useState } from "react";
 import FileContainer from "~/components/file-container";
 import { api } from "~/trpc/react";
-import { z } from "zod";
+import { type z } from "zod";
 import {
   Card,
   CardContent,
@@ -30,17 +30,16 @@ import {
 import { Loader } from "react-feather";
 import { toast } from "sonner";
 import { motion } from "motion/react";
-
-const uuidType = z.string().uuid();
+import { type uuidType } from "~/server/utility";
 
 export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
   type InputData = inferRouterInputs<AppRouter>["presentations"]["create"];
   const router = useRouter();
 
   const creationMutation = api.presentations.create.useMutation({
-    onSuccess(data, variables, context) {
+    onSuccess(data) {
       toast.success("Presentation created successfully");
-      router.push(`/edit/${data[0]?.shortname}`);
+      router.push(`/edit/${data.shortname}`);
     },
     onError(error) {
       toast.error(error.message || "Failed to create presentation");

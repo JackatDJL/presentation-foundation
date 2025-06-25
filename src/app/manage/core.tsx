@@ -15,11 +15,11 @@ import {
 import { PlusCircle, ArrowLeft, Edit2, Eye } from "react-feather";
 import { AsyncViewLink } from "~/components/asyncLink";
 import { useSearchParams } from "next/navigation";
-import type { presentations } from "~/server/db/schema";
 import { motion } from "motion/react";
+import { type presentations } from "@prisma/client";
 
 interface ManagePresentationsProps {
-  presentation: (typeof presentations.$inferSelect)[];
+  presentation: presentations[];
 }
 
 export default function ManagePresentations({
