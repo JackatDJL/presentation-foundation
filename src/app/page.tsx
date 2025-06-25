@@ -90,8 +90,10 @@ export async function generateMetadata(props: {
   // ).text();
 
   let cover: string | undefined = undefined;
-  if (presentation.cover) {
-    const file = await api.files.getById(presentation.cover);
+  if (presentation.coverId) {
+    const file = presentation.files.find(
+      (file) => file.id === presentation.coverId,
+    );
     cover = file?.url;
   }
 

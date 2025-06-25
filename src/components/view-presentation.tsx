@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Loader } from "react-feather";
 import Image from "next/image";
 import {
@@ -28,19 +28,12 @@ export default function ViewPresentation({ shortname }: ViewPresentationProps) {
   const { data: presentation, isPending } =
     api.presentations.getByShortname.useQuery(shortname);
 
-  // Fetch logo and cover files if they exist
-  const { data: logoFile } = api.files.getById.useQuery(
-    presentation?.logo ?? "",
-    {
-      enabled: !!presentation?.logo,
-    },
+  const logoFile = presentation?.files.find(
+    (file) => presentation.logoId === file.id,
   );
 
-  const { data: coverFile } = api.files.getById.useQuery(
-    presentation?.cover ?? "",
-    {
-      enabled: !!presentation?.cover,
-    },
+  const coverFile = presentation?.files.find(
+    (file) => presentation.coverId === file.id,
   );
 
   // Convert searchParams to a regular object for our utility functions
@@ -144,25 +137,25 @@ export default function ViewPresentation({ shortname }: ViewPresentationProps) {
           <CardContent className="pt-6 space-y-8">
             {/* Presentation Files Section */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {presentation.presentation && (
+              {presentation.presentationId && (
                 <FileView
-                  fileId={presentation.presentation}
+                  fileId={presentation.presentationId}
                   fileType="presentation"
                   presentationId={presentation.id}
                 />
               )}
 
-              {presentation.handout && (
+              {presentation.handoutId && (
                 <FileView
-                  fileId={presentation.handout}
+                  fileId={presentation.handoutId}
                   fileType="handout"
                   presentationId={presentation.id}
                 />
               )}
 
-              {presentation.research && (
+              {presentation.researchId && (
                 <FileView
-                  fileId={presentation.research}
+                  fileId={presentation.researchId}
                   fileType="research"
                   presentationId={presentation.id}
                 />

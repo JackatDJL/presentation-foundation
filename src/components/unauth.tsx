@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { AlertTriangle, LogIn, Home } from "react-feather";
 import { Card, CardContent } from "~/components/ui/card";

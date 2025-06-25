@@ -1,0 +1,158 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["views", "multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DB_MAIN_STRING")
+  directUrl = env("DB_MAIN_DIRECT_STRING")
+  schemas   = ["data", "files"]
+}
+
+enum file_types {
+  logo
+  cover
+  presentation
+  handout
+  research
+
+  @@schema("files")
+}
+
+enum visibility_types {
+  public
+  private
+
+  @@schema("data")
+}
+
+enum fileStorage_types {
+  utfs
+  blob
+
+  @@schema("files")
+}
+
+enum fileTransfer_types {
+  idle
+  queued
+  in_progress
+
+  @@schema("files")
+}
+
+model files {
+  id             String             @id @default(uuid())
+  name           String
+  fileType       file_types
+  dataType       String
+  size           Int
+  ufsKey         String?            @db.VarChar(48)
+  blobPath       String?
+  url            String
+  storedIn       fileStorage_types  @default(utfs)
+  targetStorage  fileStorage_types  @default(blob)
+  transferStatus fileTransfer_types @default(idle)
+  isLocked       Boolean            @default(false)
+  password       String?
+  presentationId String
+  owner          String             @db.VarChar(32)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  logo           presentations?     @relation(name: "LogoRelation")
+  cover          presentations?     @relation(name: "CoverRelation")
+  presentation   presentations?     @relation(name: "PresentationRelation")
+  handout        presentations?     @relation(name: "HandoutRelation")
+  research       presentations?     @relation(name: "ResearchRelation")
+  parent         presentations?     @relation(fields: [parentId], references: [id])
+  parentId       String?
+
+  @@index([id])
+  @@index([presentationId])
+  @@index([owner])
+  @@index([fileType, presentationId])
+  @@schema("files")
+}
+
+model presentations {
+  id             String           @id @default(uuid())
+  shortname      String           @unique @db.VarChar(25)
+  title          String
+  description    String?
+  logo           files?           @relation(name: "LogoRelation", fields: [logoId], references: [id])
+  logoId         String?          @unique
+  cover          files?           @relation(name: "CoverRelation", fields: [coverId], references: [id])
+  coverId        String?          @unique
+  presentation   files?           @relation(name: "PresentationRelation", fields: [presentationId], references: [id])
+  presentationId String?          @unique
+  handout        files?           @relation(name: "HandoutRelation", fields: [handoutId], references: [id])
+  handoutId      String?          @unique
+  research       files?           @relation(name: "ResearchRelation", fields: [researchId], references: [id])
+  researchId     String?          @unique
+  kahootPin      String?
+  kahootId       String?
+  credits        String?
+  visibility     visibility_types @default(private)
+  owner          String           @db.VarChar(32)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  files          files[]
+
+  @@index([id])
+  @@index([shortname])
+  @@index([owner])
+  @@index([owner, visibility])
+  @@index([visibility])
+  @@index([kahootPin])
+  @@index([kahootId])
+  @@schema("data")
+}
+
+view public_presentations {
+  id             String
+  shortname      String           @unique
+  title          String
+  description    String?
+  logoId         String?
+  coverId        String?
+  presentationId String?
+  handoutId      String?
+  researchId     String?
+  kahootPin      String?
+  kahootId       String?
+  credits        String?
+  visibility     visibility_types
+  owner          String
+  createdAt      DateTime
+  updatedAt      DateTime
+
+  @@map("public_presentations")
+  @@schema("data")
+}
+
+view public_files {
+  id             String             @unique
+  name           String
+  fileType       file_types
+  dataType       String
+  size           Int
+  ufsKey         String?
+  blobPath       String?
+  url            String
+  storedIn       fileStorage_types
+  targetStorage  fileStorage_types
+  transferStatus fileTransfer_types
+  isLocked       Boolean
+  password       String?
+  presentationId String
+  owner          String
+  createdAt      DateTime
+  updatedAt      DateTime
+
+  @@map("public_files")
+  @@schema("files")
+}

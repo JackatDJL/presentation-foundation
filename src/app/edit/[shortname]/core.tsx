@@ -7,7 +7,6 @@ import { Button } from "~/components/ui/button";
 import { useState } from "react";
 import FileContainer from "~/components/file-container";
 import { api } from "~/trpc/react";
-import type { presentations } from "~/server/db/schema";
 import { z } from "zod";
 import {
   Card,
@@ -41,6 +40,7 @@ import { toast } from "sonner";
 import type { SearchParams } from "~/components/shortname-routing-utility";
 import { AsyncViewLink } from "~/components/asyncLink";
 import { motion } from "motion/react";
+import { type presentations } from "@prisma/client";
 
 const uuidType = z.string().uuid();
 
@@ -104,7 +104,7 @@ function PresentationForm({
   refetch,
   searchParams,
 }: {
-  presentation: typeof presentations.$inferSelect;
+  presentation: presentations;
   refetch: () => void;
   searchParams: SearchParams;
 }) {

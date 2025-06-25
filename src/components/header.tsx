@@ -50,7 +50,12 @@ export default function Header() {
 
           <div className="relative h-10">
             <SignedIn>
-              <UserButton showName appearance={userButtonAppearance} />
+              <UserButton
+                showName
+                appearance={userButtonAppearance}
+                userProfileMode="navigation"
+                userProfileUrl="/profile"
+              />
             </SignedIn>
             <SignedOut>
               <Button className="flex items-center h-10 space-x-4" asChild>

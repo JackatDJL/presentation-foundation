@@ -1,12 +1,11 @@
-import { eq, not, and } from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 import { db } from "~/server/db";
 import { del, put } from "@vercel/blob";
-import { files, presentations } from "~/server/db/schema";
 import { utapi } from "~/server/uploadthing";
+import { type Prisma } from "@prisma/client";
 import * as argon2 from "argon2";
 import crypto from "crypto";
 
@@ -32,7 +31,7 @@ export const fileRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      const file: typeof files.$inferInsert = {
+      const file: Prisma.filesCreateInput = {
         id: crypto.randomUUID(),
         name: input.name,
         fileType: input.fileType,
@@ -54,62 +53,68 @@ export const fileRouter = createTRPCRouter({
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      // console.log("Inserting Data into Database", file);
 
-      const response = await db.insert(files).values(file).returning();
+      const response = await db.files.create({
+        data: file,
+      });
 
-      // console.log("Inserted Data into Database", response);
-
-      // console.log("Configuring Presentation to point to File");
-
-      const presentation = await db
-        .update(presentations)
-        .set({
-          [input.fileType]: response[0]?.id,
+      const presentation = await db.presentations.update({
+        where: {
+          id: input.presentationId,
+        },
+        data: {
+          [input.fileType]: response.id,
           updatedAt: new Date(),
-        })
-        .where(eq(presentations.id, input.presentationId))
-        .returning();
-
-      // console.log("Updated Presentation", presentation);
+        },
+      });
 
       return {
-        file: response[0],
-        presentation: presentation[0],
+        file: response,
+        presentation: presentation,
       };
     }),
   getById: publicProcedure.input(z.string()).query(async ({ input }) => {
-    const file = await db.select().from(files).where(eq(files.id, input));
-
-    return file[0];
+    return db.files.findUnique({
+      where: {
+        id: input,
+      },
+    });
   }),
 
   deleteById: publicProcedure
     .input(z.string().uuid())
     .mutation(async ({ input }) => {
       // Check if the file exists
-      let filles = await db.select().from(files).where(eq(files.id, input));
-      const file = filles[0];
+      let file = await db.files.findUnique({
+        where: {
+          id: input,
+        },
+      });
 
-      if (!file || file.transferStatus === "in progress") {
-        throw new Error("File not found or currently Trancending Servers");
+      if (!file) {
+        throw new Error("File not found");
       }
+
+      if (file.transferStatus === "in_progress") {
+        throw new Error("File is currently being transferred");
+      }
+
       // Immediatly remove the file from the queue so that the file doesnt get lost trancending servers
       if (file.transferStatus === "queued") {
-        filles = await db
-          .update(files)
-          .set({
+        file = await db.files.update({
+          where: {
+            id: input,
+          },
+          data: {
             targetStorage: file.storedIn,
             transferStatus: "idle",
-          })
-          .where(eq(files.id, input))
-          .returning();
+          },
+        });
       }
-      // Get the presentationId and the filetype
 
       // Delete the file from the corresponding service
       switch (file.storedIn) {
-        case "utfs":
+        case "utfs": {
           if (!file.ufsKey) {
             throw new Error("No Key Provided");
           }
@@ -121,39 +126,33 @@ export const fileRouter = createTRPCRouter({
             throw new Error("Failed to delete file");
           }
           break;
-        case "blob":
+        }
+        case "blob": {
           if (!file.blobPath) {
             throw new Error("No Path Provided");
           }
           await del(file.blobPath);
           break;
+        }
       }
 
       // Update the presentation to remove the file
-
-      const dbPrResponse = await db
-        .update(presentations)
-        .set({
+      await db.presentations.update({
+        where: {
+          id: file.presentationId,
+        },
+        data: {
           [file.fileType]: null,
-        })
-        .where(eq(presentations.id, file.presentationId))
-        .returning();
+          updatedAt: new Date(),
+        },
+      });
 
-      if (
-        dbPrResponse[0]?.[file.fileType] !== null ||
-        dbPrResponse.length !== 1
-      ) {
-        throw new Error("Failed to update presentation");
-      }
-
-      // Delete the file from the db
-      const dbFileResponse = await db
-        .delete(files)
-        .where(eq(files.id, input))
-        .returning();
-      if (dbFileResponse.length !== 1) {
-        throw new Error("Failed to delete file");
-      }
+      // Delete the file from the database
+      await db.files.delete({
+        where: {
+          id: input,
+        },
+      });
 
       return;
     }),
@@ -168,12 +167,11 @@ export const fileRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      const tfile = await db
-        .select()
-        .from(files)
-        .where(eq(files.id, input.fileId));
-
-      const file = tfile[0];
+      const file = await db.files.findUnique({
+        where: {
+          id: input.fileId,
+        },
+      });
 
       if (!file) {
         return {
@@ -231,15 +229,17 @@ export const fileRouter = createTRPCRouter({
             };
           }
 
-          const response = await db
-            .update(files)
-            .set({
+          const response = await db.files.update({
+            where: {
+              id: input.fileId,
+            },
+            data: {
               password: input.newPassword
                 ? await argon2.hash(input.newPassword)
                 : null,
               updatedAt: new Date(),
-            })
-            .where(eq(files.id, input.fileId));
+            },
+          });
 
           return {
             success: true,
@@ -260,14 +260,16 @@ export const fileRouter = createTRPCRouter({
 
           const hash = await argon2.hash(prehash);
 
-          const response = await db
-            .update(files)
-            .set({
+          const response = await db.files.update({
+            where: {
+              id: input.fileId,
+            },
+            data: {
               isLocked: true,
               password: hash,
               updatedAt: new Date(),
-            })
-            .where(eq(files.id, input.fileId));
+            },
+          });
 
           return {
             success: true,
@@ -295,14 +297,16 @@ export const fileRouter = createTRPCRouter({
             };
           }
 
-          const response = await db
-            .update(files)
-            .set({
+          const response = await db.files.update({
+            where: {
+              id: input.fileId,
+            },
+            data: {
               isLocked: false,
               password: null,
               updatedAt: new Date(),
-            })
-            .where(eq(files.id, input.fileId));
+            },
+          });
 
           return {
             success: true,
@@ -323,12 +327,11 @@ export const fileRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      const tfile = await db
-        .select()
-        .from(files)
-        .where(eq(files.id, input.fileId));
-
-      const file = tfile[0];
+      const file = await db.files.findUnique({
+        where: {
+          id: input.fileId,
+        },
+      });
 
       if (!file) {
         return {
@@ -361,50 +364,54 @@ export const fileRouter = createTRPCRouter({
     }),
   transfers: createTRPCRouter({
     run: publicProcedure.mutation(async () => {
+      // TODO: Implement transfer monitoring with posthog
       // First set all the files wo are idle and storedIn !== targetStorage to queued
       // This will probably only be called if i manually move around files between storage services
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      await db
-        .update(files)
-        .set({
-          transferStatus: "queued",
-        })
-        .where(
-          and(
-            eq(files.transferStatus, "idle"),
-            not(eq(files.storedIn, files.targetStorage)),
-          ),
+      await db.$transaction(async (tx) => {
+        // pull all idle
+        // sort for ones where storedIn != targetStorage
+        // update them to queued
+        const idleFiles = await tx.files.findMany({
+          where: {
+            transferStatus: "idle",
+          },
+        });
+        const filesToQueue = idleFiles.filter(
+          (file) => file.storedIn !== file.targetStorage,
         );
-
-      await db
-        .update(files)
-        .set({
-          transferStatus: "idle",
-        })
-        .where(
-          and(
-            not(eq(files.transferStatus, "idle")),
-            eq(files.storedIn, files.targetStorage),
-          ),
-        );
+        if (filesToQueue.length > 0) {
+          await tx.files.updateMany({
+            where: {
+              id: {
+                in: filesToQueue.map((file) => file.id),
+              },
+            },
+            data: {
+              transferStatus: "queued",
+            },
+          });
+        }
+      });
 
       // Then get all to be transferred files
-      const filesToTransfer = await db
-        .select()
-        .from(files)
-        .where(eq(files.transferStatus, "queued"));
+      const filesToTransfer = await db.files.findMany({
+        where: {
+          transferStatus: "queued",
+        },
+      });
 
       // For each file, transfer it
       for (const file of filesToTransfer) {
         // Set Status
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const updatestatus = await db
-          .update(files)
-          .set({
-            transferStatus: "in progress",
-          })
-          .where(eq(files.id, file.id));
+        await db.files.update({
+          where: {
+            id: file.id,
+          },
+          data: {
+            transferStatus: "in_progress",
+          },
+        });
 
         const blob = await fetch(file.url).then((res) => res.blob());
 
@@ -412,12 +419,17 @@ export const fileRouter = createTRPCRouter({
           console.warn(
             "Blob is Corrupted (Or Cloudflare making issues again), Aborting transfer",
           );
-          await db
-            .update(files)
-            .set({
+          await db.files.update({
+            where: {
+              id: file.id,
+            },
+            data: {
               transferStatus: "idle",
-            })
-            .where(eq(files.id, file.id));
+            },
+          });
+          // TODO: YANK SENTRY AND POSTHOG HERE
+          console.warn("File transfer aborted");
+
           continue;
         }
 
@@ -428,17 +440,18 @@ export const fileRouter = createTRPCRouter({
             try {
               const up_utfs_response = await utapi.uploadFilesFromUrl(file.url);
 
-              await db
-                .update(files)
-                .set({
+              await db.files.update({
+                where: {
+                  id: file.id,
+                },
+                data: {
                   ufsKey: up_utfs_response.data?.key,
                   url: up_utfs_response.data?.ufsUrl,
-                })
-                .where(eq(files.id, file.id));
+                },
+              });
+              up_success = true;
             } catch (error) {
               console.error(error);
-            } finally {
-              up_success = true;
             }
             break;
           case "blob":
@@ -450,17 +463,18 @@ export const fileRouter = createTRPCRouter({
                   access: "public",
                 },
               );
-              await db
-                .update(files)
-                .set({
+              await db.files.update({
+                where: {
+                  id: file.id,
+                },
+                data: {
                   blobPath: up_blob_response.pathname,
                   url: up_blob_response.url,
-                })
-                .where(eq(files.id, file.id));
+                },
+              });
+              up_success = true;
             } catch (error) {
               console.error(error);
-            } finally {
-              up_success = true;
             }
             break;
         }
@@ -485,16 +499,17 @@ export const fileRouter = createTRPCRouter({
                 throw new Error("Failed to delete file");
               }
 
-              await db
-                .update(files)
-                .set({
+              await db.files.update({
+                where: {
+                  id: file.id,
+                },
+                data: {
                   ufsKey: null,
-                })
-                .where(eq(files.id, file.id));
+                },
+              });
+              del_success = true;
             } catch (error) {
               console.error(error);
-            } finally {
-              del_success = true;
             }
             break;
           case "blob":
@@ -504,16 +519,17 @@ export const fileRouter = createTRPCRouter({
               }
               await del(file.blobPath);
 
-              await db
-                .update(files)
-                .set({
+              await db.files.update({
+                where: {
+                  id: file.id,
+                },
+                data: {
                   blobPath: null,
-                })
-                .where(eq(files.id, file.id));
+                },
+              });
+              del_success = true;
             } catch (error) {
               console.error(error);
-            } finally {
-              del_success = true;
             }
             break;
         }
@@ -522,14 +538,16 @@ export const fileRouter = createTRPCRouter({
           throw new Error("Failed to delete file");
         }
 
-        // Set Status and storage
-        await db
-          .update(files)
-          .set({
+        await db.files.update({
+          where: {
+            id: file.id,
+          },
+          data: {
             storedIn: file.targetStorage,
             transferStatus: "idle",
-          })
-          .where(eq(files.id, file.id));
+            updatedAt: new Date(),
+          },
+        });
       }
     }),
   }),

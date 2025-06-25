@@ -24,27 +24,9 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  let logo: string | null = null;
-  let cover: string | null = null;
-  if (data.logo) {
-    const logoData = await api.files.getById(data.logo);
-    if (!logoData) {
-      return new NextResponse("Logo not found", {
-        status: 404,
-      });
-    }
-    logo = logoData.url;
-  }
-
-  if (data.cover) {
-    const coverData = await api.files.getById(data.cover);
-    if (!coverData) {
-      return new NextResponse("Cover not found", {
-        status: 404,
-      });
-    }
-    cover = coverData.url;
-  }
+  const logo = data.files.find((file) => file.id === data.logoId)?.url ?? null;
+  const cover =
+    data.files.find((file) => file.id === data.coverId)?.url ?? null;
 
   return new ImageResponse(
     (

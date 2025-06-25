@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import Link from "next/link";
 import { useClerk } from "@clerk/nextjs";
 import {
@@ -22,8 +22,8 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { api } from "~/trpc/react";
-import type { presentations } from "~/server/db/schema";
 import { AsyncViewLink } from "./asyncLink";
+import { type presentations } from "@prisma/client";
 
 export default function Home({
   userId,
@@ -34,7 +34,7 @@ export default function Home({
 }) {
   const { redirectToUserProfile } = useClerk();
   const [recentPresentations, setRecentPresentations] = useState<
-    (typeof presentations.$inferSelect)[]
+    presentations[]
   >([]);
 
   const query = api.recent.pullByUID.useQuery({

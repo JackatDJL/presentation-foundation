@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { FileText, Lock, Download, Eye } from "react-feather";
 import {
   Card,
@@ -21,10 +21,11 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { Input } from "~/components/ui/input";
+import { type file_types } from "@prisma/client";
 
 interface FileViewProps {
   fileId: string;
-  fileType: "presentation" | "handout" | "research" | "logo" | "cover";
+  fileType: file_types;
   presentationId?: string;
 }
 

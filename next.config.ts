@@ -2,10 +2,10 @@
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
  * for Docker builds.
  */
+import { type NextConfig } from "next";
 import "./src/env.js";
 
-/** @type {import("next").NextConfig} */
-const config = {
+const config: NextConfig = {
   images: {
     remotePatterns: [
       {
@@ -18,6 +18,13 @@ const config = {
         hostname: "arvdoawqez6yhriu.public.blob.vercel-storage.com",
       },
     ],
+  },
+  experimental: {
+    ppr: true,
+    useCache: true,
+  },
+  turbopack: {
+    root: __dirname,
   },
 };
 
@@ -37,7 +44,7 @@ export default withSentryConfig(config, {
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
   // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
+  // widenClientFileUpload: true,
 
   // Automatically annotate React components to show their full name in breadcrumbs and session replay
   reactComponentAnnotation: {
