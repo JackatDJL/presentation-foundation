@@ -3,7 +3,7 @@ import {
   createRouteMatcher,
   currentUser,
 } from "@clerk/nextjs/server";
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { forbiddenNames } from "./lib/constants";
 
 // Future Routing Structure
@@ -37,10 +37,10 @@ import { forbiddenNames } from "./lib/constants";
  * - - /edit/{shortname} // Root / Org Root
  * - - /create // Root / Org Root
  * - - (hidden routing)
- * - - - /internal/hero // Only Rootdomain!
- * - - - /internal/home // Rootdomain / Org Rootdomain
- * - - - /internal/view/[shortname] // Also gets rewritten from /[username]/[shortname] on free tier as well as subdomains and orgs subdomains /[shortname]
- * - - - /internal/layout.ts // File that checks for a cookie or header from middleware to only pass through to the only rewritten targeted routes if the middleware actualy wanted that to happen
+ * - - - /_internal/hero // Only Rootdomain!
+ * - - - /_internal/home // Rootdomain / Org Rootdomain
+ * - - - /_internal/view/[shortname] // Also gets rewritten from /[username]/[shortname] on free tier as well as subdomains and orgs subdomains /[shortname]
+ * - - - /_internal/layout.ts // File that checks for a cookie or header from middleware to only pass through to the only rewritten targeted routes if the middleware actualy wanted that to happen
 
 * - / // the root page.tsx // but thanks to middleware inaccessible
  */
@@ -50,15 +50,15 @@ import { forbiddenNames } from "./lib/constants";
 // Internal Route set
 // All internal routes are wraped by a layout.tsx file that checks for a cookie or header from the middleware to only pass through to the only rewritten targeted routes if the middleware actualy wanted that to happen
 /**
- *  - /internal/hero/B2C // Hero Page for Root Domain
- *  - /internal/hero/B2B // Possible advertising page for orgs in the future // disregarded for now
- *  - /internal/home/user // Will Partial Prerender this page and just input the username and then fetch with trpc // homepage for users on the root domain,
- *  - /internal/home/org/[orgSlug] // Will Partial Prerender this page and just input the orgSlug and then fetch with trpc // homepage for orgs on the root domain,
- *  - /internal/profile/org/[orgSlug] // Org Public facing page, only presentaitons that are public e.g. example-org.pr.djl.foundation
- *  - /internal/profile/user/[username] // User Profile Page, e.g. pr.djl.foundation/username
- *  - /internal/view/free/[username]/[shortname] // Free Tier Presentation View, e.g. pr.djl.foundation/username/shortname
- *  - /internal/view/pro/[shortname] // Pro Tier Presentation View, e.g. pr.djl.foundation/!shortname
- *  - /internal/view/org/[orgSlug]/[shortname] // Org Presentation View, e.g. example-org.pr.djl.foundation/shortname
+ *  - /_internal/hero/B2C // Hero Page for Root Domain
+ *  - /_internal/hero/B2B // Possible advertising page for orgs in the future // disregarded for now
+ *  - /_internal/home/user // Will Partial Prerender this page and just input the username and then fetch with trpc // homepage for users on the root domain,
+ *  - /_internal/home/org/[orgSlug] // Will Partial Prerender this page and just input the orgSlug and then fetch with trpc // homepage for orgs on the root domain,
+ *  - /_internal/profile/org/[orgSlug] // Org Public facing page, only presentaitons that are public e.g. example-org.pr.djl.foundation
+ *  - /_internal/profile/user/[username] // User Profile Page, e.g. pr.djl.foundation/username
+ *  - /_internal/view/free/[username]/[shortname] // Free Tier Presentation View, e.g. pr.djl.foundation/username/shortname
+ *  - /_internal/view/pro/[shortname] // Pro Tier Presentation View, e.g. pr.djl.foundation/!shortname
+ *  - /_internal/view/org/[orgSlug]/[shortname] // Org Presentation View, e.g. example-org.pr.djl.foundation/shortname
  */
 
 // Route List: (current / old way)
@@ -98,12 +98,13 @@ import { forbiddenNames } from "./lib/constants";
  * - /home
  * - /view
  * - /layout
- * - /internal
+ * - /_internal
  * - /_next
  * - /api
  * - /trpc
  */
 
+// Route Matchers for different paths
 const isAuth = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
@@ -122,39 +123,93 @@ const isOrgManagement = createRouteMatcher([
   "/org/settings(.*)",
   "/profile/select(.*)",
 ]);
-// Free Tier is /(username *)/(shortname *)
-const isFreeTier = createRouteMatcher(["/([^/]+)/([^/]+)"]);
-// User Profile is /{username}
-const isUserProfile = createRouteMatcher(["^/([^/]+)$"]);
-// Pro Tier is /!(shortname *)
-const isProTier = createRouteMatcher(["/!([^/]+)"]);
+const isFreeTier = createRouteMatcher(["/([^/]+)/([^/]+)"]); // Matches /username/shortname
+const isUserProfile = createRouteMatcher(["^/([^/]+)$"]); // Matches /username (single path segment)
+const isProTier = createRouteMatcher(["/!([^/]+)"]); // Matches /!shortname
 
 const isOrgRedirect = createRouteMatcher(["/org"]);
 const isSettingsRoute = createRouteMatcher(["/settings"]);
 const isManageRoute = createRouteMatcher(["/manage"]);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const isListRoute = createRouteMatcher(["/list"]);
 
-function isOrg(req: NextRequest) {
-  const { hostname } = req.nextUrl;
-  return (
-    hostname.endsWith(".pr.djl.foundation") && hostname !== "pr.djl.foundation"
-  );
+/**
+ * Checks if the given hostname corresponds to an organization subdomain.
+ * Example: `example-org.pr.djl.foundation`
+ * @param hostname The hostname to check.
+ * @returns True if it's an org subdomain, false otherwise.
+ */
+function isOrg(hostname: string) {
+  const baseDomain = ".pr.djl.foundation";
+  // Checks if the hostname ends with the base domain and is not the base domain itself.
+  return hostname.endsWith(baseDomain) && hostname !== `pr${baseDomain}`;
 }
 
-const isRootRoute = createRouteMatcher(["/"]);
+/**
+ * Checks if the current environment is development or a Vercel preview deployment.
+ * @param hostname The hostname to check.
+ * @returns True if it's a dev/preview environment, false otherwise.
+ */
+function isDev(hostname: string) {
+  return hostname === "localhost" || hostname.endsWith(".vercel.app");
+}
+
+const isRootRoute = createRouteMatcher(["/"]); // Matches the root path "/"
 
 export default clerkMiddleware(async (auth, req) => {
-  const { pathname, hostname } = req.nextUrl;
+  const { pathname, hostname: originalHostname, searchParams } = req.nextUrl;
+  let effectiveHostname = originalHostname; // This hostname is used for internal middleware logic (e.g., `isOrg` checks).
+
   console.log(
-    `[Middleware] Incoming request: Hostname=${hostname}, Pathname=${pathname}`,
+    `[Middleware] Incoming request: Original Hostname=${originalHostname}, Pathname=${pathname}, SearchParams=${searchParams.toString()}`,
   );
-  const authData = await auth(); // Fetch authData once
+
+  // Determine the base origin for external redirects.
+  // In development/preview environments, this must point back to the actual deployment URL (e.g., localhost:3000 or my-branch.vercel.app).
+  // In production, it's simply the request's origin.
+  const protocol = req.nextUrl.protocol;
+  const port = req.nextUrl.port ? ":" + req.nextUrl.port : "";
+  let redirectBaseOrigin: string;
+
+  // DX: Simulate subdomain for local/preview environments
+  if (isDev(originalHostname)) {
+    // For redirects, always use the original deployment hostname (e.g., my-branch.vercel.app or localhost).
+    redirectBaseOrigin = `${protocol}://${originalHostname}${port}`;
+
+    const subdomainParam = searchParams.get("subdomain");
+
+    if (subdomainParam) {
+      console.log(`[Middleware] DX: Simulating subdomain: ${subdomainParam}`);
+      // Update effectiveHostname for internal routing logic to reflect the simulated subdomain.
+      effectiveHostname = `${subdomainParam}.pr.djl.foundation`;
+    } else {
+      console.log(
+        `[Middleware] DX: No subdomain param, defaulting effective hostname to main domain.`,
+      );
+      // For internal logic, if no subdomain param, treat it as the main domain.
+      effectiveHostname = `pr.djl.foundation`;
+    }
+    console.log(
+      `[Middleware] DX: Effective Hostname for logic = ${effectiveHostname}`,
+    );
+    console.log(
+      `[Middleware] DX: Redirect Base Origin for external redirects = ${redirectBaseOrigin}`,
+    );
+  } else {
+    // Not a dev environment, so effectiveHostname is the same as originalHostname.
+    // The redirect base origin is simply the current request's origin.
+    redirectBaseOrigin = req.nextUrl.origin;
+  }
+
+  const authData = await auth(); // Fetch authentication data once
   console.log(
     `[Middleware] Auth Data: userId=${authData.userId}, orgSlug=${authData.orgSlug}`,
   );
 
-  // Scenario 1: On Org Subdomain, accessing Auth/Legal/Management/Org-Management routes
-  if (isOrg(req)) {
+  // Scenario 1: On a simulated/real organization subdomain, and accessing Auth/Legal/Management/Org-Management routes.
+  // These routes should always be handled on the main domain.
+  if (isOrg(effectiveHostname)) {
+    // Use effectiveHostname for the logic check
     console.log(
       "[Middleware] Scenario 1: On Org Subdomain, checking Auth/Legal/Management/Org-Management routes",
     );
@@ -164,16 +219,21 @@ export default clerkMiddleware(async (auth, req) => {
       isManagement(req) ||
       isOrgManagement(req)
     ) {
-      const redirectUrl = new URL(pathname, `https://pr.djl.foundation`);
+      // Redirect to the main domain of the current deployment.
+      // This means using `redirectBaseOrigin` and ensuring no `subdomain` query parameter.
+      const targetUrl = new URL(pathname, redirectBaseOrigin);
+      targetUrl.searchParams.delete("subdomain"); // Remove subdomain param for main domain redirect
       console.log(
-        `[Middleware] Redirecting to main domain: ${redirectUrl.toString()}`,
+        `[Middleware] Redirecting to main domain: ${targetUrl.toString()}`,
       );
-      return NextResponse.redirect(redirectUrl);
+      return NextResponse.redirect(targetUrl);
     }
   }
 
-  // Scenario 2: On Main Domain, accessing Management/Org-Management routes (and user has an org)
-  if (!isOrg(req)) {
+  // Scenario 2: On the main domain, and accessing Management/Org-Management routes, and the user has an organization.
+  // Redirect them to their organization's subdomain.
+  if (!isOrg(effectiveHostname)) {
+    // Use effectiveHostname for the logic check
     console.log(
       "[Middleware] Scenario 2: On Main Domain, checking Management/Org-Management routes",
     );
@@ -181,69 +241,90 @@ export default clerkMiddleware(async (auth, req) => {
     console.log(`[Middleware] User Org Slug: ${userOrgSlug}`);
 
     if (userOrgSlug && (isManagement(req) || isOrgManagement(req))) {
-      const redirectUrl = new URL(
-        pathname,
-        `https://${userOrgSlug}.pr.djl.foundation`,
-      );
+      // Redirect to the organization subdomain of the current deployment.
+      // This means using `redirectBaseOrigin` and adding the `subdomain` query parameter.
+      const targetUrl = new URL(pathname, redirectBaseOrigin);
+      targetUrl.searchParams.set("subdomain", userOrgSlug);
       console.log(
-        `[Middleware] Redirecting to org subdomain: ${redirectUrl.toString()}`,
+        `[Middleware] Redirecting to org subdomain: ${targetUrl.toString()}`,
       );
-      return NextResponse.redirect(redirectUrl);
+      return NextResponse.redirect(targetUrl);
     }
   }
 
+  // Handle `/org` redirect: always redirect to `/settings`.
   if (isOrgRedirect(req)) {
     console.log("[Middleware] Handling /org redirect");
-    return NextResponse.redirect(new URL("/settings", req.url));
+    // Redirect to /settings on the current base origin, preserving existing search parameters.
+    const targetUrl = new URL("/settings", redirectBaseOrigin);
+    targetUrl.search = req.nextUrl.search; // Preserve search params
+    console.log(
+      `[Middleware] Redirecting /org to /settings: ${targetUrl.toString()}`,
+    );
+    return NextResponse.redirect(targetUrl);
   }
 
-  // Intelligent /settings redirect
-  if (isSettingsRoute(req) && !isOrg(req)) {
+  // Intelligent `/settings` redirect:
+  // If on the main domain and accessing `/settings`:
+  // - If the user has an organization, redirect to the organization's settings page on its subdomain.
+  // - Otherwise (personal account), redirect to `/profile`.
+  if (isSettingsRoute(req) && !isOrg(effectiveHostname)) {
+    // Use effectiveHostname for the logic check
     console.log("[Middleware] Intelligent /settings redirect");
     const userOrgSlug = authData.orgSlug;
     if (userOrgSlug) {
+      // Redirect to organization subdomain settings.
+      const targetUrl = new URL(pathname, redirectBaseOrigin);
+      targetUrl.searchParams.set("subdomain", userOrgSlug);
       console.log(
-        `[Middleware] Redirecting /settings to org subdomain: https://${userOrgSlug}.pr.djl.foundation${pathname}`,
+        `[Middleware] Redirecting /settings to org subdomain: ${targetUrl.toString()}`,
       );
-      return NextResponse.redirect(
-        new URL(pathname, `https://${userOrgSlug}.pr.djl.foundation`),
-      );
+      return NextResponse.redirect(targetUrl);
     } else {
+      // Redirect to /profile (personal account) on the current base origin, preserving search parameters.
+      const targetUrl = new URL("/profile", redirectBaseOrigin);
+      targetUrl.search = req.nextUrl.search; // Preserve search params
       console.log("[Middleware] Redirecting /settings to /profile");
-      return NextResponse.redirect(new URL("/profile", req.url));
+      return NextResponse.redirect(targetUrl);
     }
   }
 
-  // Intelligent /manage redirect
-  if (isManageRoute(req) && !isOrg(req)) {
+  // Intelligent `/manage` redirect:
+  // If on the main domain and accessing `/manage`:
+  // - If the user has an organization, redirect to the organization's manage page on its subdomain.
+  // - Otherwise (personal account), redirect to `/list`.
+  if (isManageRoute(req) && !isOrg(effectiveHostname)) {
+    // Use effectiveHostname for the logic check
     console.log("[Middleware] Intelligent /manage redirect");
     const userOrgSlug = authData.orgSlug;
     if (userOrgSlug) {
+      // Redirect to organization subdomain manage page.
+      const targetUrl = new URL(pathname, redirectBaseOrigin);
+      targetUrl.searchParams.set("subdomain", userOrgSlug);
       console.log(
-        `[Middleware] Redirecting /manage to org subdomain: https://${userOrgSlug}.pr.djl.foundation${pathname}`,
+        `[Middleware] Redirecting /manage to org subdomain: ${targetUrl.toString()}`,
       );
-      return NextResponse.redirect(
-        new URL(pathname, `https://${userOrgSlug}.pr.djl.foundation`),
-      );
+      return NextResponse.redirect(targetUrl);
     } else {
+      // Redirect to /list (personal account) on the current base origin, preserving search parameters.
+      const targetUrl = new URL("/list", redirectBaseOrigin);
+      targetUrl.search = req.nextUrl.search; // Preserve search params
       console.log("[Middleware] Redirecting /manage to /list");
-      return NextResponse.redirect(new URL("/list", req.url));
+      return NextResponse.redirect(targetUrl);
     }
   }
 
-  if (isAuth(req)) {
-    console.log("[Middleware] Handling Auth route");
-    return NextResponse.redirect(new URL("/", req.url));
-  }
-
+  // Protect management routes, requiring authentication.
   if (isManagement(req)) {
-    console.log("[Middleware] Handling Management route");
+    console.log("[Middleware] Handling Management route: protecting.");
     await auth.protect();
   }
 
-  // Handle custom domains/orgs
-  if (isOrg(req)) {
-    console.log("[Middleware] Handling custom domains/orgs");
+  // Handle custom domains/orgs for internal rewrites.
+  // The `req.url` here will correctly reflect the `effectiveHostname` due to the DX modification.
+  if (isOrg(effectiveHostname)) {
+    // Use effectiveHostname for the logic check
+    console.log("[Middleware] Handling custom domains/orgs (rewrites)");
     // For org root (e.g., example-org.pr.djl.foundation/)
     if (pathname === "/") {
       console.log("[Middleware] Org root path");
@@ -257,8 +338,9 @@ export default clerkMiddleware(async (auth, req) => {
         response.headers.set("x-internal-no-evict", "true");
         return response;
       }
+      const orgSlugFromEffectiveHostname = effectiveHostname.split(".")[0];
       const response = NextResponse.rewrite(
-        new URL(`/internal/home/org/${hostname.split(".")[0]}`, req.url),
+        new URL(`/internal/home/org/${orgSlugFromEffectiveHostname}`, req.url),
       );
       console.log(
         `[Middleware] Rewriting to /internal/home/org: ${response.url}`,
@@ -276,9 +358,10 @@ export default clerkMiddleware(async (auth, req) => {
         );
         return NextResponse.rewrite(new URL("/forbidden", req.url));
       }
+      const orgSlugFromEffectiveHostname = effectiveHostname.split(".")[0];
       const response = NextResponse.rewrite(
         new URL(
-          `/internal/view/org/${hostname.split(".")[0]}/${shortname}`,
+          `/internal/view/org/${orgSlugFromEffectiveHostname}/${shortname}`,
           req.url,
         ),
       );
@@ -290,12 +373,12 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
-  // Handle User Profile (username)
+  // Handle User Profile (e.g., /username).
   if (isUserProfile(req)) {
     console.log("[Middleware] Handling User Profile route");
     const username = pathname.substring(1); // Remove leading slash
     console.log(`[Middleware] Extracted username: ${username}`);
-    const userData = await currentUser(); // Moved here
+    const userData = await currentUser(); // Fetch current user data from Clerk
     if (forbiddenNames.includes(username)) {
       console.log(
         "[Middleware] Username is forbidden, rewriting to /forbidden",
@@ -303,15 +386,18 @@ export default clerkMiddleware(async (auth, req) => {
       return NextResponse.rewrite(new URL("/forbidden", req.url));
     }
 
-    // If authenticated user matches the profile, redirect to home
+    // If the authenticated user's username matches the profile being viewed, redirect to the home page.
     if (authData.userId && userData?.username === username) {
       console.log(
-        "[Middleware] Authenticated user matches profile, redirecting to / ",
+        "[Middleware] Authenticated user matches profile, redirecting to home page.",
       );
-      return NextResponse.redirect(new URL("/", req.url));
+      // Redirect to the main domain root, ensuring no subdomain param for personal home.
+      const targetUrl = new URL("/", redirectBaseOrigin);
+      targetUrl.searchParams.delete("subdomain"); // Remove subdomain param
+      return NextResponse.redirect(targetUrl);
     }
 
-    // Otherwise, show the public user profile
+    // Otherwise, rewrite to show the public user profile page.
     const response = NextResponse.rewrite(
       new URL(`/internal/profile/user/${username}`, req.url),
     );
@@ -322,7 +408,7 @@ export default clerkMiddleware(async (auth, req) => {
     return response;
   }
 
-  // Handle Free Tier (username/shortname)
+  // Handle Free Tier presentations (e.g., /username/shortname).
   if (isFreeTier(req)) {
     console.log("[Middleware] Handling Free Tier route");
     const parts = pathname.split("/");
@@ -351,7 +437,7 @@ export default clerkMiddleware(async (auth, req) => {
     return response;
   }
 
-  // Handle Pro Tier (!shortname)
+  // Handle Pro Tier presentations (e.g., /!shortname).
   if (isProTier(req)) {
     console.log("[Middleware] Handling Pro Tier route");
     const shortname = pathname.substring(2); // Remove leading /!
@@ -372,10 +458,11 @@ export default clerkMiddleware(async (auth, req) => {
     return response;
   }
 
-  // Handle Root Route (hero/home) for main domain
+  // Handle Root Route (`/`) for the main domain.
   if (isRootRoute(req)) {
     console.log("[Middleware] Handling Root Route (main domain)");
     if (!authData.userId) {
+      // If not authenticated, show the B2C hero page.
       const response = NextResponse.rewrite(
         new URL("/internal/hero/B2C", req.url),
       );
@@ -385,6 +472,7 @@ export default clerkMiddleware(async (auth, req) => {
       response.headers.set("x-internal-no-evict", "true");
       return response;
     }
+    // If authenticated, show the user's home page.
     const response = NextResponse.rewrite(
       new URL(`/internal/home/user`, req.url),
     );
@@ -396,11 +484,14 @@ export default clerkMiddleware(async (auth, req) => {
   }
 });
 
+// Configuration for the middleware matcher, specifying which paths it should run on.
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
+    // Skip Next.js internals (e.g., _next) and all static files.
+    // The `[^?]*\\.(?:html?|css|js(?!on)|zip|webmanifest)` part ensures it runs
+    // on paths that are not static files, unless they have a query parameter (like `?subdomain=`).
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|zip|webmanifest)).*)",
-    // Always run for API routes
+    // Always run for API and tRPC routes.
     "/(api|trpc)(.*)",
   ],
 };
