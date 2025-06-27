@@ -141,11 +141,14 @@ const isRootRoute = createRouteMatcher(["/"]);
 
 export default clerkMiddleware(async (auth, req) => {
   const { pathname, hostname } = req.nextUrl;
+  console.log(`[Middleware] Incoming request: Hostname=${hostname}, Pathname=${pathname}`);
   const authData = await auth(); // Fetch authData once
+  console.log(`[Middleware] Auth Data: userId=${authData.userId}, orgSlug=${authData.orgSlug}`);
   
 
   // Scenario 1: On Org Subdomain, accessing Auth/Legal/Management/Org-Management routes
   if (isOrg(req)) {
+    console.log('[Middleware] Scenario 1: On Org Subdomain, checking Auth/Legal/Management/Org-Management routes');
     if (
       isAuth(req) ||
       isLegal(req) ||
@@ -153,80 +156,101 @@ export default clerkMiddleware(async (auth, req) => {
       isOrgManagement(req)
     ) {
       const redirectUrl = new URL(pathname, `https://pr.djl.foundation`);
+      console.log(`[Middleware] Redirecting to main domain: ${redirectUrl.toString()}`);
       return NextResponse.redirect(redirectUrl);
     }
   }
 
   // Scenario 2: On Main Domain, accessing Management/Org-Management routes (and user has an org)
   if (!isOrg(req)) {
+    console.log('[Middleware] Scenario 2: On Main Domain, checking Management/Org-Management routes');
     const userOrgSlug = authData.orgSlug;
+    console.log(`[Middleware] User Org Slug: ${userOrgSlug}`);
 
     if (userOrgSlug && (isManagement(req) || isOrgManagement(req))) {
       const redirectUrl = new URL(
         pathname,
         `https://${userOrgSlug}.pr.djl.foundation`,
       );
+      console.log(`[Middleware] Redirecting to org subdomain: ${redirectUrl.toString()}`);
       return NextResponse.redirect(redirectUrl);
     }
   }
 
   if (isOrgRedirect(req)) {
+    console.log('[Middleware] Handling /org redirect');
     return NextResponse.redirect(new URL("/settings", req.url));
   }
 
   // Intelligent /settings redirect
   if (isSettingsRoute(req) && !isOrg(req)) {
+    console.log('[Middleware] Intelligent /settings redirect');
     const userOrgSlug = authData.orgSlug;
     if (userOrgSlug) {
+      console.log(`[Middleware] Redirecting /settings to org subdomain: https://${userOrgSlug}.pr.djl.foundation${pathname}`);
       return NextResponse.redirect(new URL(pathname, `https://${userOrgSlug}.pr.djl.foundation`));
     } else {
+      console.log('[Middleware] Redirecting /settings to /profile');
       return NextResponse.redirect(new URL("/profile", req.url));
     }
   }
 
   // Intelligent /manage redirect
   if (isManageRoute(req) && !isOrg(req)) {
+    console.log('[Middleware] Intelligent /manage redirect');
     const userOrgSlug = authData.orgSlug;
     if (userOrgSlug) {
+      console.log(`[Middleware] Redirecting /manage to org subdomain: https://${userOrgSlug}.pr.djl.foundation${pathname}`);
       return NextResponse.redirect(new URL(pathname, `https://${userOrgSlug}.pr.djl.foundation`));
     } else {
+      console.log('[Middleware] Redirecting /manage to /list');
       return NextResponse.redirect(new URL("/list", req.url));
     }
   }
 
   if (isAuth(req)) {
+    console.log('[Middleware] Handling Auth route');
     return NextResponse.redirect(new URL("/", req.url));
   }
 
   if (isManagement(req)) {
+    console.log('[Middleware] Handling Management route');
     await auth.protect();
   }
 
   // Handle custom domains/orgs
   if (isOrg(req)) {
+    console.log('[Middleware] Handling custom domains/orgs');
     // For org root (e.g., example-org.pr.djl.foundation/)
     if (pathname === "/") {
+      console.log('[Middleware] Org root path');
       if (!authData.userId) {
         const response = NextResponse.rewrite(
           new URL("/_internal/hero/B2C", req.url),
         );
+        console.log(`[Middleware] Rewriting to /_internal/hero/B2C: ${response.url}`);
         response.headers.set("x-internal-no-evict", "true");
         return response;
       }
       const response = NextResponse.rewrite(
         new URL(`/_internal/home/org/${hostname.split('.')[0]}`, req.url),
       );
+      console.log(`[Middleware] Rewriting to /_internal/home/org: ${response.url}`);
       response.headers.set("x-internal-no-evict", "true");
       return response;
     } else {
       // For org presentations (e.g., example-org.pr.djl.foundation/shortname)
+      console.log('[Middleware] Org presentation path');
       const shortname = pathname.substring(1); // Remove leading slash
+      console.log(`[Middleware] Extracted shortname: ${shortname}`);
       if (forbiddenNames.includes(shortname)) {
+        console.log('[Middleware] Shortname is forbidden, rewriting to /forbidden');
         return NextResponse.rewrite(new URL("/forbidden", req.url));
       }
       const response = NextResponse.rewrite(
         new URL(`/_internal/view/org/${hostname.split('.')[0]}/${shortname}`, req.url),
       );
+      console.log(`[Middleware] Rewriting to /_internal/view/org: ${response.url}`);
       response.headers.set("x-internal-no-evict", "true");
       return response;
     }
@@ -234,14 +258,18 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Handle User Profile (username)
   if (isUserProfile(req)) {
+    console.log('[Middleware] Handling User Profile route');
     const username = pathname.substring(1); // Remove leading slash
+    console.log(`[Middleware] Extracted username: ${username}`);
     const userData = await currentUser(); // Moved here
     if (forbiddenNames.includes(username)) {
+      console.log('[Middleware] Username is forbidden, rewriting to /forbidden');
       return NextResponse.rewrite(new URL("/forbidden", req.url));
     }
 
     // If authenticated user matches the profile, redirect to home
     if (authData.userId && userData?.username === username) {
+      console.log('[Middleware] Authenticated user matches profile, redirecting to / ');
       return NextResponse.redirect(new URL("/", req.url));
     }
 
@@ -249,52 +277,64 @@ export default clerkMiddleware(async (auth, req) => {
     const response = NextResponse.rewrite(
       new URL(`/_internal/profile/user/${username}`, req.url),
     );
+    console.log(`[Middleware] Rewriting to /_internal/profile/user: ${response.url}`);
     response.headers.set("x-internal-no-evict", "true");
     return response;
   }
 
   // Handle Free Tier (username/shortname)
   if (isFreeTier(req)) {
+    console.log('[Middleware] Handling Free Tier route');
     const parts = pathname.split("/");
     const username = parts[1];
     const shortname = parts[2];
+    console.log(`[Middleware] Extracted username: ${username}, shortname: ${shortname}`);
 
     if (
       (username && forbiddenNames.includes(username)) ||
       (shortname && forbiddenNames.includes(shortname))
     ) {
+      console.log('[Middleware] Username or shortname is forbidden, rewriting to /forbidden');
       return NextResponse.rewrite(new URL("/forbidden", req.url));
     }
     const response = NextResponse.rewrite(
       new URL(`/_internal/view/free/${username}/${shortname}`, req.url),
     );
+    console.log(`[Middleware] Rewriting to /_internal/view/free: ${response.url}`);
     response.headers.set("x-internal-no-evict", "true");
     return response;
   }
 
   // Handle Pro Tier (!shortname)
   if (isProTier(req)) {
+    console.log('[Middleware] Handling Pro Tier route');
     const shortname = pathname.substring(2); // Remove leading /!
+    console.log(`[Middleware] Extracted shortname: ${shortname}`);
     if (forbiddenNames.includes(shortname)) {
+      console.log('[Middleware] Shortname is forbidden, rewriting to /forbidden');
       return NextResponse.rewrite(new URL("/forbidden", req.url));
     }
     const response = NextResponse.rewrite(
       new URL(`/_internal/view/pro/${shortname}`, req.url),
     );
+    console.log(`[Middleware] Rewriting to /_internal/view/pro: ${response.url}`);
     response.headers.set("x-internal-no-evict", "true");
     return response;
   }
 
   // Handle Root Route (hero/home) for main domain
   if (isRootRoute(req)) {
+    console.log('[Middleware] Handling Root Route (main domain)');
     if (!authData.userId) {
       const response = NextResponse.rewrite(
         new URL("/_internal/hero/B2C", req.url),
       );
+      console.log(`[Middleware] Rewriting to /_internal/hero/B2C: ${response.url}`);
       response.headers.set("x-internal-no-evict", "true");
       return response;
     }
     const response = NextResponse.rewrite(new URL(`/_internal/home/user`, req.url));
+    console.log(`[Middleware] Rewriting to /_internal/home/user: ${response.url}`);
     response.headers.set("x-internal-no-evict", "true");
     return response;
   }
