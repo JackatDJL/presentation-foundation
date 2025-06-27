@@ -4,6 +4,5 @@ import { usePathname } from "next/navigation";
 import Maintenance from "~/components/maintanance";
 
 export default function HomeUserPage() {
-  const pathname = usePathname();
-  return <Maintenance debug={true} message={pathname} />;
+  return <Maintenance debug={true} message="/internal/home/user" />;
 }

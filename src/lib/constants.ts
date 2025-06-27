@@ -16,7 +16,7 @@ export const forbiddenNames = [
   "home",
   "view",
   "layout",
-  "_internal",
+  "internal",
   "_next",
   "api",
   "trpc",

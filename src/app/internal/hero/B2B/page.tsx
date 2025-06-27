@@ -4,6 +4,5 @@ import { usePathname } from "next/navigation";
 import Maintenance from "~/components/maintanance";
 
 export default function HeroB2BPage() {
-  const pathname = usePathname();
-  return <Maintenance debug={true} message={pathname} />;
+  return <Maintenance debug={true} message="/internal/hero/B2B" />;
 }

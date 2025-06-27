@@ -3,14 +3,18 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
-import { Wrench, Home, ArrowLeft } from "react-feather";
+import { Home, ArrowLeft } from "react-feather";
+import { Wrench } from "lucide-react";
 
 interface MaintenanceProps {
   debug?: boolean;
   message: string;
 }
 
-export default function Maintenance({ debug = true, message }: MaintenanceProps) {
+export default function Maintenance({
+  debug = true,
+  message,
+}: MaintenanceProps) {
   return (
     <div className="container mx-auto px-4 py-16 min-h-[80vh] flex items-center justify-center">
       <motion.div
@@ -64,7 +68,7 @@ export default function Maintenance({ debug = true, message }: MaintenanceProps)
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.4 }}
         >
-          We're currently working on this page. Please check back soon!
+          We&apos;re currently working on this page. Please check back soon!
         </motion.p>
 
         {debug && (
