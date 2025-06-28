@@ -10,7 +10,7 @@ datasource db {
   provider  = "postgresql"
   url       = env("DB_MAIN_STRING")
   directUrl = env("DB_MAIN_DIRECT_STRING")
-  schemas   = ["data", "files"]
+  schemas   = ["data", "files", "auth"]
 }
 
 enum file_types {
@@ -60,7 +60,8 @@ model files {
   isLocked       Boolean            @default(false)
   password       String?
   presentationId String
-  owner          String             @db.VarChar(32)
+  ownerId        String
+  owner          User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
   logo           presentations?     @relation(name: "LogoRelation")
@@ -73,7 +74,7 @@ model files {
 
   @@index([id])
   @@index([presentationId])
-  @@index([owner])
+  @@index([ownerId])
   @@index([fileType, presentationId])
   @@schema("files")
 }
@@ -97,15 +98,16 @@ model presentations {
   kahootId       String?
   credits        String?
   visibility     visibility_types @default(private)
-  owner          String           @db.VarChar(32)
+  ownerId        String
+  owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   files          files[]
 
   @@index([id])
   @@index([shortname])
-  @@index([owner])
-  @@index([owner, visibility])
+  @@index([ownerId])
+  @@index([ownerId, visibility])
   @@index([visibility])
   @@index([kahootPin])
   @@index([kahootId])
@@ -126,7 +128,7 @@ view public_presentations {
   kahootId       String?
   credits        String?
   visibility     visibility_types
-  owner          String
+  ownerId        String
   createdAt      DateTime
   updatedAt      DateTime
 
@@ -149,10 +151,205 @@ view public_files {
   isLocked       Boolean
   password       String?
   presentationId String
-  owner          String
+  ownerId        String
   createdAt      DateTime
   updatedAt      DateTime
 
   @@map("public_files")
   @@schema("files")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+
+  username                 String?
+  displayUsername          String?
+  role                     String?
+  banned                   Boolean?
+  banReason                String?
+  banExpires               DateTime?
+  tosAccepted              Boolean
+  privacyPolicyAccepted    Boolean
+  marketingConsentAccepted Boolean
+  cookieConsentAccepted    Boolean
+  passkeys                 Passkey[]
+  members                  Member[]
+  invitations              Invitation[]
+  files                    files[]
+  presentations            presentations[]
+
+  @@unique([email])
+  @@unique([username])
+  @@map("user")
+  @@schema("auth")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy       String?
+  activeOrganizationId String?
+
+  @@unique([token])
+  @@map("session")
+  @@schema("auth")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+  @@schema("auth")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+  @@schema("auth")
+}
+
+model Passkey {
+  id           String    @id
+  name         String?
+  publicKey    String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime?
+  aaguid       String?
+
+  @@map("passkey")
+  @@schema("auth")
+}
+
+model OauthApplication {
+  id           String    @id
+  name         String?
+  icon         String?
+  metadata     String?
+  clientId     String?
+  clientSecret String?
+  redirectURLs String?
+  type         String?
+  disabled     Boolean?
+  userId       String?
+  createdAt    DateTime?
+  updatedAt    DateTime?
+
+  @@unique([clientId])
+  @@map("oauthApplication")
+  @@schema("auth")
+}
+
+model OauthAccessToken {
+  id                    String    @id
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  clientId              String?
+  userId                String?
+  scopes                String?
+  createdAt             DateTime?
+  updatedAt             DateTime?
+
+  @@unique([accessToken])
+  @@unique([refreshToken])
+  @@map("oauthAccessToken")
+  @@schema("auth")
+}
+
+model OauthConsent {
+  id           String    @id
+  clientId     String?
+  userId       String?
+  scopes       String?
+  createdAt    DateTime?
+  updatedAt    DateTime?
+  consentGiven Boolean?
+
+  @@map("oauthConsent")
+  @@schema("auth")
+}
+
+model Organization {
+  id          String       @id
+  name        String
+  slug        String?
+  logo        String?
+  createdAt   DateTime
+  metadata    String?
+  members     Member[]
+  invitations Invitation[]
+
+  @@unique([slug])
+  @@map("organization")
+  @@schema("auth")
+}
+
+model Member {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String
+  createdAt      DateTime
+
+  @@map("member")
+  @@schema("auth")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String
+  expiresAt      DateTime
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@map("invitation")
+  @@schema("auth")
 }

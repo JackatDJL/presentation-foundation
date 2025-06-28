@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import Maintenance from "~/components/maintanance";
 
 export default function HeroB2CPage() {

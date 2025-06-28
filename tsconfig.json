@@ -31,6 +31,9 @@
       "#env": ["./src/env.js"],
       "#flags": ["./src/server/flags.ts"],
       "#utility": ["./src/server/utility.ts"],
+      "#db": ["./src/server/db.ts"],
+      "#auth": ["./src/server/auth.ts"],
+      "#auth/client": ["./src/server/auth-client.ts"],
     }
   },
   "include": [
