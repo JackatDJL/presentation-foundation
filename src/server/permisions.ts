@@ -22,7 +22,7 @@ const statement = {
     "manage-global",
     "delete-global",
   ],
-  tier: ["free", "pro"],
+  tier: ["free", "pro", "admin"],
 } as const;
 
 export const ac = createAccessControl(statement);
@@ -58,5 +58,5 @@ export const admin = ac.newRole({
     "manage-global",
     "delete-global",
   ],
-  tier: ["pro"],
+  tier: ["pro", "admin"],
 });

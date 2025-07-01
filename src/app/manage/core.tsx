@@ -13,11 +13,8 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { PlusCircle, ArrowLeft, Edit2, Eye } from "react-feather";
-import { AsyncViewLink } from "~/components/asyncLink";
-import { useSearchParams } from "next/navigation";
-import { motion } from "motion/react";
 import { type presentations } from "@prisma/client";
-
+import { motion } from "motion/react";
 interface ManagePresentationsProps {
   presentation: presentations[];
 }
@@ -25,9 +22,6 @@ interface ManagePresentationsProps {
 export default function ManagePresentations({
   presentation,
 }: ManagePresentationsProps) {
-  const searchParams = useSearchParams();
-  const searchParamsObj = Object.fromEntries(searchParams.entries());
-
   return (
     <motion.div
       className="container mx-auto px-4 py-8"
@@ -152,15 +146,14 @@ export default function ManagePresentations({
                             whileTap={{ scale: 0.95 }}
                           >
                             <Button variant="outline" size="sm" asChild>
-                              <AsyncViewLink
-                                searchParams={searchParamsObj}
-                                shortname={presentation.shortname}
+                              <Link
+                                prefetch
+                                href={`/view/${presentation.shortname}`}
                                 className="flex items-center gap-1"
-                                spinIt={false}
                               >
                                 <Eye className="h-3.5 w-3.5" />
                                 View
-                              </AsyncViewLink>
+                              </Link>
                             </Button>
                           </motion.div>
                         </div>

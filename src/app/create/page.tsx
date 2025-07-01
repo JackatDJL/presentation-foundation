@@ -1,6 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
 import { CreatePage } from "./core";
-import { cleanup } from "~/components/shortname-routing";
 import type { Metadata } from "next";
 
 // TODO: Implement Metadata
@@ -27,7 +26,6 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   const Auth = await auth.protect();
-  await cleanup();
 
   return <CreatePage userId={Auth.userId} />;
 }

@@ -3,9 +3,9 @@
 import posthog from "posthog-js";
 import env from "#env";
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
-import { Suspense, useEffect } from "react";
+import { Suspense, use, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useAuth, useUser } from "@clerk/nextjs";
+import authClient from "#auth/client";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -32,9 +32,7 @@ function PostHogPageView() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const posthog = usePostHog();
-
-  const { isSignedIn, userId } = useAuth();
-  const { user } = useUser();
+  const session = use(authClient.getSession());
 
   useEffect(() => {
     if (pathname && posthog) {
@@ -50,21 +48,19 @@ function PostHogPageView() {
   useEffect(() => {
     // 👉 Check the sign-in status and user info,
     //    and identify the user if they aren't already
-    if (isSignedIn && userId && user && !posthog._isIdentified()) {
+    if (session.data && !posthog._isIdentified()) {
       // 👉 Identify the user
-      posthog.identify(userId, {
-        email: user.primaryEmailAddress?.emailAddress,
-        first_name: user.firstName,
-        last_name: user.lastName,
-
-        username: user.username,
+      posthog.identify(session.data.user.id, {
+        email: session.data.user.email,
+        name: session.data.user.name,
+        username: session.data.user.username,
       });
     }
 
-    if (!isSignedIn && posthog._isIdentified()) {
+    if (!session.data && posthog._isIdentified()) {
       posthog.reset();
     }
-  }, [posthog, user, isSignedIn, userId]);
+  }, [posthog, session.data]);
 
   return null;
 }

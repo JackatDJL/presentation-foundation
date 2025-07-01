@@ -1,8 +1,9 @@
-import { auth } from "@clerk/nextjs/server";
 import ManagePresentations from "./core";
 import { api } from "~/trpc/server";
-import { cleanup } from "~/components/shortname-routing";
 import type { Metadata } from "next";
+import auth from "@/src/server/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 // TODO: Implement Metadata
 export const metadata: Metadata = {
@@ -25,10 +26,14 @@ export const metadata: Metadata = {
 };
 
 export default async function ManagePage() {
-  const user = await auth.protect();
-  await cleanup();
+  const authData = await auth.api.getSession({ headers: await headers() });
+
+  if (!authData) {
+    redirect("/sign-in");
+  }
+
   const presentation = await api.recent.pullByUID({
-    uid: user.userId,
+    uid: authData.user.id,
   });
 
   return <ManagePresentations presentation={presentation} />;

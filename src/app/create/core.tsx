@@ -55,7 +55,7 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
       kahootId: formData.kahootId,
       credits: formData.credits,
       visibility: formData.visibility,
-      owner: userId,
+      ownerId: userId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -115,7 +115,7 @@ export function CreatePage({ userId }: { userId: z.infer<typeof uuidType> }) {
         kahootId: formData.kahootId,
         visibility: formData.visibility as "public" | "private",
         credits: formData.credits,
-        owner: userId,
+        ownerId: userId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });

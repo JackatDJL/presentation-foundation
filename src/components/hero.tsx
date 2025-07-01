@@ -3,7 +3,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useInView } from "motion/react";
-import { SignedOut, Waitlist } from "@clerk/nextjs";
 import {
   Clock,
   Download,
@@ -111,11 +110,6 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
           >
-            <SignedOut>
-              <Button size="lg" asChild>
-                <a href="#waitlist">Join the Waitlist</a>
-              </Button>
-            </SignedOut>
             <Button size="lg" variant="secondary" asChild>
               <a href="#how-it-works">See How It Works</a>
             </Button>
@@ -355,40 +349,6 @@ export default function Hero() {
           </CardContent>
         </Card>
       </section>
-
-      <SignedOut>
-        <section className="py-16 mt-16" id="waitlist">
-          <Card className="bg-gradient-to-r from-primary/20 via-primary/10 to-secondary/20 border-none">
-            <CardContent className="p-8 md:p-12">
-              <div className="max-w-3xl mx-auto text-center">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  Join the Waitlist
-                </h2>
-                <p className="text-xl text-muted-foreground mb-8">
-                  Be the first to experience the Presentation Foundation when we
-                  launch. Enter your email to join our waitlist.
-                </p>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex justify-center">
-                      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-lg">
-                        <Waitlist appearance={{ layout: {} }} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <p className="mt-6 text-sm text-muted-foreground">
-                  By joining the waitlist, you&apos;ll receive updates about our
-                  launch and early access opportunities.
-                  <br />A project by the DJL Foundation.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-      </SignedOut>
 
       <section className="py-8">
         <Card className="bg-transparent border-none shadow-none text-center text-sm text-muted-foreground dark:text-slate-400">

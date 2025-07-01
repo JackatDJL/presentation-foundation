@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Button } from "./ui/button";
-import { AsyncHomeLink } from "./asyncLink";
+import authClient from "#auth/client";
+import { use } from "react";
 
 export default function Header() {
   const userButtonAppearance = {
@@ -11,15 +11,16 @@ export default function Header() {
       userButtonAvatarBox: "w-10 h-10",
     },
   };
+  const authData = use(authClient.getSession()).data;
 
   return (
     <header className="bg-background border-b print:border-none">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <AsyncHomeLink
-            searchParams={{}}
+          <Link
+            href="/"
             className="flex items-center space-x-2 print:no-underline print:text-foreground"
-            spinIt={false}
+            prefetch
           >
             <div className="relative w-10 h-10">
               <Image
@@ -35,21 +36,23 @@ export default function Header() {
             <span className="hidden print:block print:text-xl font-semibold">
               by DJL
             </span>
-          </AsyncHomeLink>
+          </Link>
         </div>
 
         <div className="flex items-center space-x-4 print:hidden">
           <ThemeToggle />
-          <SignedIn>
+          {authData && (
             <Button asChild>
               <Link prefetch href="/manage">
                 Manage
               </Link>
             </Button>
-          </SignedIn>
+          )}
 
           <div className="relative h-10">
-            <SignedIn>
+            Very beautiful user button here
+            {/* Fn need to design one now */}
+            {/* <SignedIn>
               <UserButton
                 showName
                 appearance={userButtonAppearance}
@@ -61,7 +64,7 @@ export default function Header() {
               <Button className="flex items-center h-10 space-x-4" asChild>
                 <SignInButton />
               </Button>
-            </SignedOut>
+            </SignedOut> */}
           </div>
         </div>
       </div>

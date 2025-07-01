@@ -37,78 +37,47 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { toast } from "sonner";
-import type { SearchParams } from "~/components/shortname-routing-utility";
-import { AsyncViewLink } from "~/components/asyncLink";
-import { motion } from "motion/react";
 import { type presentations } from "@prisma/client";
-
 const uuidType = z.string().uuid();
 
 export function EditPage({ id }: { id: z.infer<typeof uuidType> }) {
   uuidType.parse(id);
 
-  const { data, isLoading, refetch } = api.presentations.getById.useQuery(id);
-
-  const searchParams = useSearchParams();
-
+  const { data, isLoading } = api.presentations.getById.useQuery(id);
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col items-center gap-4"
-        >
+        <div className="flex flex-col items-center gap-4">
           <Loader className="h-8 w-8 animate-spin" />
           <p className="text-lg">Loading...</p>
-        </motion.div>
+        </div>
       </div>
     );
   }
-
   if (!data) {
     return (
-      <motion.div
-        className="container mx-auto px-4 py-12"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div className="container mx-auto px-4 py-12">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Presentation not found</h1>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <div>
             <Button asChild>
               <Link prefetch href="/manage">
                 Back to Manage
               </Link>
             </Button>
-          </motion.div>
+          </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
-
-  return (
-    <PresentationForm
-      presentation={data}
-      refetch={refetch}
-      searchParams={Object.fromEntries(searchParams.entries())}
-    />
-  );
+  return <PresentationForm presentation={data} />;
 }
 
 function PresentationForm({
   presentation,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  refetch,
-  searchParams,
 }: {
   presentation: presentations;
-  refetch: () => void;
-  searchParams: SearchParams;
-}) {
-  const router = useRouter();
+}) {  const router = useRouter();
   const [formData, setFormData] = useState({
     shortname: presentation.shortname,
     title: presentation.title,
@@ -260,48 +229,34 @@ function PresentationForm({
   };
 
   return (
-    <motion.div
-      className="container mx-auto px-4 py-12"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.div
-        className="flex justify-between items-center mb-8"
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
+    <div className="container mx-auto px-4 py-12">
+      <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Edit {presentation.title}</h1>
         <div className="flex gap-2">
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <div>
             <Button variant="outline" asChild>
               <Link prefetch href="/manage">
                 Back to Manage
               </Link>
             </Button>
-          </motion.div>
+          </div>
           {presentation.shortname && (
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <div>
               <Button variant="secondary" asChild>
-                <AsyncViewLink
-                  searchParams={searchParams}
-                  shortname={presentation.shortname}
+                <Link
+                  prefetch
+                  href={`/view/${presentation.shortname}`}
+                  className="flex items-center gap-1"
                 >
                   View
-                </AsyncViewLink>
+                </Link>
               </Button>
-            </motion.div>
+            </div>
           )}
         </div>
-      </motion.div>
+      </div>
 
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <Card>
+      <div>        <Card>
           <form onSubmit={handleSubmit}>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>

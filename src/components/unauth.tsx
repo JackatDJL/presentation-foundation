@@ -5,15 +5,12 @@ import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { AlertTriangle, LogIn, Home } from "react-feather";
 import { Card, CardContent } from "~/components/ui/card";
-import { useClerk } from "@clerk/nextjs";
 
 interface UnauthorizedProps {
   edit?: boolean;
 }
 
 export default function Unauthorized({ edit = false }: UnauthorizedProps) {
-  const clerk = useClerk();
-
   return (
     <div className="container mx-auto px-4 py-16 min-h-[80vh] flex items-center justify-center">
       <Card className="max-w-md w-full">
@@ -80,12 +77,11 @@ export default function Unauthorized({ edit = false }: UnauthorizedProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.5 }}
             >
-              <Button
-                onClick={() => clerk.redirectToSignIn()}
-                className="flex items-center gap-2"
-              >
-                <LogIn className="h-4 w-4" />
-                Sign In
+              <Button className="flex items-center gap-2" asChild>
+                <Link href="/sign-in" className="flex items-center gap-2">
+                  <LogIn className="h-4 w-4" />
+                  Sign In
+                </Link>
               </Button>
               <Button variant="outline" asChild>
                 <Link href="/" className="flex items-center gap-2">

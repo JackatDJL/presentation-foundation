@@ -1,16 +1,20 @@
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
 
 import { db } from "~/server/db";
 import { utapi } from "~/server/uploadthing";
 
 import { del } from "@vercel/blob";
-import { forbiddenShortnames } from "~/components/shortname-routing-utility";
 import { type Prisma } from "@prisma/client";
+import { forbiddenNames } from "@/src/lib/constants";
 
 export const presentationRouter = createTRPCRouter({
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z.object({
         shortname: z.string().max(25),
@@ -24,7 +28,7 @@ export const presentationRouter = createTRPCRouter({
 
         visibility: z.enum(["public", "private"]).optional(),
 
-        owner: z.string().max(32),
+        ownerId: z.string().max(32),
 
         createdAt: z.string().datetime(),
         updatedAt: z.string().datetime(),
@@ -44,7 +48,11 @@ export const presentationRouter = createTRPCRouter({
 
         visibility: input.visibility,
 
-        owner: input.owner,
+        owner: {
+          connect: {
+            id: input.ownerId,
+          },
+        },
         createdAt: new Date(input.createdAt),
         updatedAt: new Date(input.updatedAt),
       };
@@ -54,7 +62,7 @@ export const presentationRouter = createTRPCRouter({
       });
     }),
 
-  checkAvailability: publicProcedure
+  checkAvailability: protectedProcedure
     .input(z.string())
     .query(async ({ input }) => {
       const isAvailable = await db.presentations.findMany({
@@ -63,7 +71,7 @@ export const presentationRouter = createTRPCRouter({
         },
       });
 
-      if (forbiddenShortnames.includes(input)) {
+      if (forbiddenNames.includes(input)) {
         return false;
       }
       return isAvailable.length === 0;
@@ -102,7 +110,7 @@ export const presentationRouter = createTRPCRouter({
     });
   }),
 
-  edit: publicProcedure
+  edit: protectedProcedure
     .input(
       z.object({
         id: z.string().uuid(),
@@ -145,7 +153,7 @@ export const presentationRouter = createTRPCRouter({
       return presentation;
     }),
 
-  deleteById: publicProcedure
+  deleteById: protectedProcedure
     .input(z.string().uuid())
     .mutation(async ({ input }) => {
       const presentation = await db.presentations.findUnique({

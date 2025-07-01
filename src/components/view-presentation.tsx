@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { motion } from "motion/react";
 import { Loader } from "react-feather";
@@ -17,14 +16,13 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import KahootSection from "~/components/kahoot-section";
 import FileView from "./file-view";
-import { AsyncHomeLink } from "./asyncLink";
+import Link from "next/link";
 
 interface ViewPresentationProps {
   shortname: string;
 }
 
 export default function ViewPresentation({ shortname }: ViewPresentationProps) {
-  const searchParams = useSearchParams();
   const { data: presentation, isPending } =
     api.presentations.getByShortname.useQuery(shortname);
 
@@ -35,9 +33,6 @@ export default function ViewPresentation({ shortname }: ViewPresentationProps) {
   const coverFile = presentation?.files.find(
     (file) => presentation.coverId === file.id,
   );
-
-  // Convert searchParams to a regular object for our utility functions
-  const searchParamsObj = Object.fromEntries(searchParams.entries());
 
   if (isPending) {
     return (
@@ -67,9 +62,9 @@ export default function ViewPresentation({ shortname }: ViewPresentationProps) {
           </CardHeader>
           <CardFooter>
             <Button asChild>
-              <AsyncHomeLink searchParams={searchParamsObj}>
+              <Link href="/" prefetch className="flex items-center gap-2">
                 Return Home
-              </AsyncHomeLink>
+              </Link>
             </Button>
           </CardFooter>
         </Card>
@@ -181,9 +176,9 @@ export default function ViewPresentation({ shortname }: ViewPresentationProps) {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" asChild>
-                <AsyncHomeLink searchParams={searchParamsObj}>
+                <Link href="/" prefetch className="flex items-center gap-2">
                   Return Home
-                </AsyncHomeLink>
+                </Link>
               </Button>
             </div>
           </CardFooter>

@@ -12,12 +12,9 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 
 import { TRPCReactProvider } from "~/trpc/react";
 
-import { ClerkProvider } from "@clerk/nextjs";
 import { extractRouterConfig } from "uploadthing/server";
 import { UploadthingRouter } from "./api/uploadthing/core";
 import { Toaster } from "~/components/ui/sonner";
-import { dark } from "@clerk/themes";
-import Script from "next/script";
 import { PostHogProvider } from "~/server/providers";
 import env from "~/env";
 
@@ -99,17 +96,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <Script
-        strategy="lazyOnload"
-        crossOrigin="anonymous"
-        src="//unpkg.com/react-scan/dist/auto.global.js"
-      />
       <body className={`${GeistSans.variable} antialiased`}>
-        <ClerkProvider
-          appearance={{
-            baseTheme: dark,
-          }}
-        >
           <TRPCReactProvider>
             <PostHogProvider>
               <NextSSRPlugin
@@ -131,7 +118,6 @@ export default function RootLayout({
               {shouldShowVercelToolbar && <VercelToolbar />}
             </PostHogProvider>
           </TRPCReactProvider>
-        </ClerkProvider>
       </body>
     </html>
   );

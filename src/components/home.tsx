@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { useClerk } from "@clerk/nextjs";
 import {
   PlusCircle,
   Folder,
@@ -22,7 +21,6 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { api } from "~/trpc/react";
-import { AsyncViewLink } from "./asyncLink";
 import { type presentations } from "@prisma/client";
 
 export default function Home({
@@ -32,7 +30,6 @@ export default function Home({
   userId: string;
   firstName?: string;
 }) {
-  const { redirectToUserProfile } = useClerk();
   const [recentPresentations, setRecentPresentations] = useState<
     presentations[]
   >([]);
@@ -139,12 +136,10 @@ export default function Home({
               Update personal information and security settings
             </CardContent>
             <CardFooter>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => redirectToUserProfile()}
-              >
-                Manage Account
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/settings" prefetch={true}>
+                  Manage Account
+                </Link>
               </Button>
             </CardFooter>
           </Card>
@@ -196,13 +191,12 @@ export default function Home({
                           </Link>
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
-                          <AsyncViewLink
-                            searchParams={{}}
-                            shortname={presentation.shortname}
-                            spinIt={false}
+                          <Link
+                            prefetch
+                            href={`/view/${presentation.shortname}`}
                           >
                             View
-                          </AsyncViewLink>
+                          </Link>
                         </Button>
                       </div>
                     </CardContent>

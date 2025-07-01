@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
-import { auth } from "@clerk/nextjs/server";
 import { api } from "~/trpc/server";
 import { EditPage as ThEditPage } from "./core";
 import PresentationNotFound from "~/components/prnotfound";
 import Unauthorized from "~/components/unauth";
-import { cleanup } from "~/components/shortname-routing";
 
 interface Props {
   params: Promise<{
@@ -40,7 +38,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EditPage({ params }: Props) {
   const user = await auth.protect();
-  await cleanup();
 
   const { shortname } = await params;
   const data = await api.presentations.getByShortname(shortname);
@@ -49,7 +46,7 @@ export default async function EditPage({ params }: Props) {
     return <PresentationNotFound />;
   }
 
-  if (user.userId !== data.owner) {
+  if (user.userId !== data.ownerId) {
     return <Unauthorized edit />;
   }
 

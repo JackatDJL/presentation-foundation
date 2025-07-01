@@ -20,7 +20,7 @@ const config: NextConfig = {
     ],
   },
   experimental: {
-    ppr: true,
+    // ppr: true,
     useCache: true,
   },
   turbopack: {

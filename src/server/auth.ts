@@ -16,6 +16,7 @@ import env from "#env";
 import { forbiddenNames } from "../lib/constants";
 import { ac, admin, proUser, user } from "./permisions";
 import { legalConsent } from "@better-auth-kit/legal-consent";
+import { nextCookies } from "better-auth/next-js";
 
 const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -85,6 +86,7 @@ const auth = betterAuth({
       requireMarketingConsent: true,
       requireCookieConsent: true,
     }),
+    nextCookies(),
   ],
 });
 

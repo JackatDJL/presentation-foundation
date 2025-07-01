@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 import { db } from "~/server/db";
 
 export const recentRouter = createTRPCRouter({
-  pullByUID: publicProcedure
+  pullByUID: protectedProcedure
     .input(
       z.object({
         uid: z.string().max(32),
@@ -16,7 +16,7 @@ export const recentRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const data = await db.presentations.findMany({
         where: {
-          owner: input.uid,
+          ownerId: input.uid,
         },
         orderBy: {
           updatedAt: "desc",

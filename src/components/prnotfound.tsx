@@ -5,10 +5,11 @@ import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { VolumeX, Home, Plus } from "react-feather";
 import { Card, CardContent } from "~/components/ui/card";
-import { SignedIn, SignedOut, useClerk } from "@clerk/nextjs";
+import { use } from "react";
+import authClient from "../server/auth-client";
 
 export default function PresentationNotFound() {
-  const clerk = useClerk();
+  const authData = use(authClient.getSession()).data;
 
   return (
     <div className="container mx-auto px-4 py-16 min-h-[80vh] flex items-center justify-center">
@@ -81,26 +82,27 @@ export default function PresentationNotFound() {
                   Return Home
                 </Link>
               </Button>
-
-              <SignedIn>
+              {authData && (
                 <Button variant="outline" asChild>
                   <Link href="/create" className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
                     Create New
                   </Link>
                 </Button>
-              </SignedIn>
+              )}
 
-              <SignedOut>
+              {!authData && (
                 <Button
                   variant="outline"
-                  onClick={() => clerk.redirectToSignIn()}
                   className="flex items-center gap-2"
+                  asChild
                 >
-                  <Plus className="h-4 w-4" />
-                  Sign In to Create
+                  <Link href="/sign-in" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Sign In to Create
+                  </Link>
                 </Button>
-              </SignedOut>
+              )}
             </motion.div>
           </motion.div>
         </CardContent>
